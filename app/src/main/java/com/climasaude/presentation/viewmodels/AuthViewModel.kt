@@ -6,11 +6,19 @@ import com.climasaude.domain.usecases.AuthUseCases
 import com.climasaude.domain.models.UserProfile
 import com.climasaude.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+sealed class AuthEvent {
+    object NavigateToMain : AuthEvent()
+    data class ShowSuccess(val message: String) : AuthEvent()
+    data class ShowError(val message: String) : AuthEvent()
+}
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
@@ -29,29 +37,35 @@ class AuthViewModel @Inject constructor(
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
 
+    //Usar Channel.BUFFERED para evitar que o .send() suspenda a corrotina. Modificado por: Daniel
+    private val _eventChannel = Channel<AuthEvent>(Channel.BUFFERED)
+    val authEvents = _eventChannel.receiveAsFlow()
+
     fun loginWithEmail(email: String, password: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            _errorMessage.value = null
-
-            when (val result = authUseCases.loginWithEmail(email, password)) {
-                is Resource.Success -> {
-                    val user = result.data
-                    if (user != null) {
-                        _userProfile.value = user
-                        _authState.value = AuthState.Authenticated(user)
-                    } else {
-                        _authState.value = AuthState.Error("Falha ao autenticar")
+            try {
+                when (val result = authUseCases.loginWithEmail(email, password)) {
+                    is Resource.Success -> {
+                        val user = result.data
+                        if (user != null) {
+                            _userProfile.value = user
+                            _authState.value = AuthState.Authenticated(user)
+                            _eventChannel.trySend(AuthEvent.NavigateToMain)
+                        } else {
+                            _eventChannel.trySend(AuthEvent.ShowError("Falha ao autenticar"))
+                        }
                     }
+                    is Resource.Error -> {
+                        val errorMsg = result.message ?: "Erro ao autenticar"
+                        _authState.value = AuthState.Error(errorMsg)
+                        _eventChannel.trySend(AuthEvent.ShowError(errorMsg))
+                    }
+                    else -> {}
                 }
-                is Resource.Error -> {
-                    _errorMessage.value = result.message
-                    _authState.value = AuthState.Error(result.message ?: "Erro ao autenticar")
-                }
-                is Resource.Loading -> Unit
+            } finally {
+                _isLoading.value = false
             }
-
-            _isLoading.value = false
         }
     }
 
@@ -63,90 +77,87 @@ class AuthViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _isLoading.value = true
-            _errorMessage.value = null
-
-            when (val result = authUseCases.registerWithEmail(email, password, confirmPassword, name)) {
-                is Resource.Success -> {
-                    val user = result.data
-                    if (user != null) {
-                        _userProfile.value = user
-                        _authState.value = AuthState.Authenticated(user)
-                    } else {
-                        _authState.value = AuthState.Error("Falha ao cadastrar")
+            try {
+                val result = authUseCases.registerWithEmail(email, password, confirmPassword, name)
+                when (result) {
+                    is Resource.Success -> {
+                        val user = result.data
+                        if (user != null) {
+                            _userProfile.value = user
+                            _authState.value = AuthState.Authenticated(user)
+                            _eventChannel.trySend(AuthEvent.ShowSuccess("Conta criada com sucesso! Redirecionando..."))
+                            _eventChannel.trySend(AuthEvent.NavigateToMain)
+                        }
                     }
+                    is Resource.Error -> {
+                        val errorMsg = result.message ?: "Erro ao cadastrar"
+                        _authState.value = AuthState.Error(errorMsg)
+                        _eventChannel.trySend(AuthEvent.ShowError(errorMsg))
+                    }
+                    else -> {}
                 }
-                is Resource.Error -> {
-                    _errorMessage.value = result.message
-                    _authState.value = AuthState.Error(result.message ?: "Erro ao cadastrar")
-                }
-                is Resource.Loading -> Unit
+            } catch (e: Exception) {
+                _eventChannel.trySend(AuthEvent.ShowError("Erro inesperado no cadastro"))
+            } finally {
+                // Garantir que o loading sempre seja resetado. Modificado por: Daniel
+                _isLoading.value = false
             }
-
-            _isLoading.value = false
         }
     }
 
     fun loginWithGoogle(idToken: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            _errorMessage.value = null
-
-            when (val result = authUseCases.loginWithGoogle(idToken)) {
-                is Resource.Success -> {
-                    val user = result.data
-                    if (user != null) {
-                        _userProfile.value = user
-                        _authState.value = AuthState.Authenticated(user)
-                    } else {
-                        _authState.value = AuthState.Error("Falha no login com Google")
+            try {
+                when (val result = authUseCases.loginWithGoogle(idToken)) {
+                    is Resource.Success -> {
+                        val user = result.data
+                        if (user != null) {
+                            _userProfile.value = user
+                            _authState.value = AuthState.Authenticated(user)
+                            _eventChannel.trySend(AuthEvent.NavigateToMain)
+                        }
                     }
+                    is Resource.Error -> {
+                        _eventChannel.trySend(AuthEvent.ShowError(result.message ?: "Erro no login Google"))
+                    }
+                    else -> {}
                 }
-                is Resource.Error -> {
-                    _errorMessage.value = result.message
-                    _authState.value = AuthState.Error(result.message ?: "Erro no login com Google")
-                }
-                is Resource.Loading -> Unit
+            } finally {
+                _isLoading.value = false
             }
-
-            _isLoading.value = false
         }
     }
 
     fun resetPassword(email: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            _errorMessage.value = null
-
-            when (val result = authUseCases.resetPassword(email)) {
-                is Resource.Success -> {
-                    _authState.value = AuthState.PasswordResetSent
+            try {
+                when (val result = authUseCases.resetPassword(email)) {
+                    is Resource.Success -> {
+                        _eventChannel.trySend(AuthEvent.ShowSuccess("Email de recuperação enviado!"))
+                    }
+                    is Resource.Error -> {
+                        _eventChannel.trySend(AuthEvent.ShowError(result.message ?: "Erro ao resetar senha"))
+                    }
+                    else -> {}
                 }
-                is Resource.Error -> {
-                    _errorMessage.value = result.message
-                }
-                is Resource.Loading -> Unit
+            } finally {
+                _isLoading.value = false
             }
-
-            _isLoading.value = false
         }
     }
 
     fun logout() {
         viewModelScope.launch {
             _isLoading.value = true
-
-            when (val result = authUseCases.logout()) {
-                is Resource.Success -> {
-                    _userProfile.value = null
-                    _authState.value = AuthState.Unauthenticated
-                }
-                is Resource.Error -> {
-                    _errorMessage.value = result.message
-                }
-                is Resource.Loading -> Unit
+            try {
+                authUseCases.logout()
+                _userProfile.value = null
+                _authState.value = AuthState.Unauthenticated
+            } finally {
+                _isLoading.value = false
             }
-
-            _isLoading.value = false
         }
     }
 

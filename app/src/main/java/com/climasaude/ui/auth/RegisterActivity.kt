@@ -2,6 +2,7 @@ package com.climasaude.ui.auth
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
@@ -10,7 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.climasaude.MainActivity
 import com.climasaude.databinding.ActivityRegisterBinding
-import com.climasaude.presentation.viewmodels.AuthState
+import com.climasaude.presentation.viewmodels.AuthEvent
 import com.climasaude.presentation.viewmodels.AuthViewModel
 import com.climasaude.utils.PasswordStrength
 import com.climasaude.utils.ValidationUtils
@@ -137,28 +138,36 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun updateRegisterButtonState() {
-        binding.buttonRegister.isEnabled = areFieldsValid() && binding.checkboxTerms.isChecked
+        // Se estiver carregando, mantemos desabilitado. Se não, verificamos a validade dos campos. Modificado por: Daniel
+        if (authViewModel.isLoading.value) {
+            binding.buttonRegister.isEnabled = false
+        } else {
+            binding.buttonRegister.isEnabled = areFieldsValid() && binding.checkboxTerms.isChecked
+        }
     }
 
     private fun observeViewModel() {
+        // Observar Eventos de tiro único (Navegação, Toasts, Snackbars) Modificado por: Daniel
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                authViewModel.authState.collect { state ->
-                    when (state) {
-                        is AuthState.Authenticated -> {
-                            // QA Fix: Limpar estado para evitar loop de navegação
-                            authViewModel.setInitialState()
-                            navigateToMain()
+                authViewModel.authEvents.collect { event ->
+                    when (event) {
+                        is AuthEvent.NavigateToMain -> {
+                            // Pequeno delay para o usuário ver o feedback de sucesso Modificado por: Daniel
+                            binding.root.postDelayed({ navigateToMain() }, 1000)
                         }
-                        is AuthState.Error -> {
-                            binding.root.showSnackbar(state.message)
+                        is AuthEvent.ShowSuccess -> {
+                            binding.root.showSnackbar(event.message)
                         }
-                        else -> {}
+                        is AuthEvent.ShowError -> {
+                            binding.root.showSnackbar(event.message)
+                        }
                     }
                 }
             }
         }
 
+        // Observar Loading State Modificado por: Daniel
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 authViewModel.isLoading.collect { isLoading ->
@@ -171,13 +180,19 @@ class RegisterActivity : AppCompatActivity() {
     private fun updateLoadingState(isLoading: Boolean) {
         if (isLoading) {
             binding.progressBar.show()
-            binding.buttonRegister.isEnabled = false
             binding.buttonRegister.text = "Criando conta..."
         } else {
             binding.progressBar.hide()
-            updateRegisterButtonState()
             binding.buttonRegister.text = "Criar Conta"
         }
+        
+        // Bloquear/Desbloquear interação com campos durante o carregamento Modificado por: Daniel
+        binding.buttonRegister.isEnabled = !isLoading && areFieldsValid() && binding.checkboxTerms.isChecked
+        binding.editTextName.isEnabled = !isLoading
+        binding.editTextEmail.isEnabled = !isLoading
+        binding.editTextPassword.isEnabled = !isLoading
+        binding.editTextConfirmPassword.isEnabled = !isLoading
+        binding.checkboxTerms.isEnabled = !isLoading
     }
 
     private fun performRegister() {

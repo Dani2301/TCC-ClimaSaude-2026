@@ -16,6 +16,7 @@ import com.climasaude.domain.models.*
 import com.climasaude.utils.Resource
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -44,7 +45,6 @@ class AuthRepository @Inject constructor(
         get() = firebaseAuth.currentUser
 
     suspend fun loginWithEmail(email: String, password: String): Resource<UserProfile> {
-        // QA Alert: Login de teste removido em builds de produção para maior segurança
         if (BuildConfig.DEBUG && email == "admin@climasaude.com.br" && password == "admin123") {
             val mockUser = createUserProfile("admin_id", email, "Usuário Administrador")
             appPreferences.setUserId("admin_id")
@@ -57,14 +57,12 @@ class AuthRepository @Inject constructor(
             val user = result.user
 
             if (user != null) {
-                val userProfile = getUserProfile(user.uid)
-                if (userProfile != null) {
-                    appPreferences.setUserId(user.uid)
-                    appPreferences.setUserLoggedIn(true)
-                    Resource.Success(userProfile)
-                } else {
-                    Resource.Error("Perfil do usuário não encontrado no banco de dados")
-                }
+                val userProfile = withTimeoutOrNull(5000) { getUserProfile(user.uid) }
+                    ?: createUserProfile(user.uid, user.email ?: "", "Usuário")
+                
+                appPreferences.setUserId(user.uid)
+                appPreferences.setUserLoggedIn(true)
+                Resource.Success(userProfile)
             } else {
                 Resource.Error("Falha na autenticação: Usuário nulo")
             }
@@ -94,15 +92,20 @@ class AuthRepository @Inject constructor(
 
             if (user != null) {
                 val userProfile = createUserProfile(user.uid, email, name)
-                saveUserToFirestore(userProfile)
-                saveUserToLocal(userProfile)
+                
+                withTimeoutOrNull(5000) {
+                    saveUserToFirestore(userProfile)
+                }
+                withTimeoutOrNull(3000) {
+                    saveUserToLocal(userProfile)
+                }
 
                 appPreferences.setUserId(user.uid)
                 appPreferences.setUserLoggedIn(true)
 
                 Resource.Success(userProfile)
             } else {
-                Resource.Error("Falha ao criar conta")
+                Resource.Error("Falha ao criar conta no servidor")
             }
         } catch (e: Exception) {
             Resource.Error(mapAuthException(e))
@@ -116,7 +119,7 @@ class AuthRepository @Inject constructor(
             val user = result.user
 
             if (user != null) {
-                var userProfile = getUserProfile(user.uid)
+                var userProfile = withTimeoutOrNull(5000) { getUserProfile(user.uid) }
 
                 if (userProfile == null) {
                     userProfile = createUserProfile(
@@ -125,10 +128,10 @@ class AuthRepository @Inject constructor(
                         user.displayName ?: "",
                         user.photoUrl?.toString()
                     )
-                    saveUserToFirestore(userProfile)
+                    withTimeoutOrNull(5000) { saveUserToFirestore(userProfile!!) }
                 }
 
-                saveUserToLocal(userProfile)
+                saveUserToLocal(userProfile!!)
                 appPreferences.setUserId(user.uid)
                 appPreferences.setUserLoggedIn(true)
 
@@ -171,13 +174,18 @@ class AuthRepository @Inject constructor(
         return try {
             val userId = currentUser?.uid
             if (userId != null) {
-                firestore.collection("users").document(userId).delete().await()
+                // Tenta deletar do Firestore com timeout
+                withTimeoutOrNull(5000) {
+                    firestore.collection("users").document(userId).delete().await()
+                }
 
+                // Deleta do Banco Local
                 val localUser = userDao.getUserById(userId)
                 if (localUser != null) {
                     userDao.deleteUser(localUser)
                 }
 
+                // Deleta a conta de autenticação
                 currentUser?.delete()?.await()
 
                 appPreferences.clearAll()
