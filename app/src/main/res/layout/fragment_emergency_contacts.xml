@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/text_emergency_contacts_placeholder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/title_emergency_contacts"
+        android:textAppearance="@style/TextAppearance.Material3.TitleLarge" />
+</FrameLayout>
+

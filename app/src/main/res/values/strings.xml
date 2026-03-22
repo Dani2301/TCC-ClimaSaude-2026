@@ -1,0 +1,309 @@
+<resources>
+    <!-- App Info -->
+    <string name="app_name">ClimaSaude</string>
+    <string name="app_subtitle">Sua saúde em sintonia com o clima</string>
+
+    <!-- Navigation -->
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_weather">Clima</string>
+    <string name="title_health">Saúde</string>
+    <string name="title_reports">Relatórios</string>
+    <string name="title_alerts">Alertas</string>
+    <string name="title_profile">Perfil</string>
+    <string name="title_settings">Configurações</string>
+    <string name="title_emergency_contacts">Contatos de Emergência</string>
+
+    <!-- Authentication -->
+    <string name="login">Entrar</string>
+    <string name="logout">Sair</string>
+    <string name="sign_up">Cadastrar-se</string>
+    <string name="create_account">Criar Conta</string>
+    <string name="forgot_password">Esqueceu a senha?</string>
+    <string name="reset_password">Redefinir Senha</string>
+    <string name="sign_in_with_google">Entrar com Google</string>
+    <string name="biometric_auth">Autenticação Biométrica</string>
+
+    <!-- Form Fields -->
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Senha</string>
+    <string name="hint_confirm_password">Confirmar Senha</string>
+    <string name="hint_full_name">Nome Completo</string>
+    <string name="hint_phone">Telefone</string>
+    <string name="hint_birth_date">Data de Nascimento</string>
+    <string name="hint_weight">Peso (kg)</string>
+    <string name="hint_height">Altura (cm)</string>
+
+    <!-- Validation Messages -->
+    <string name="error_email_required">Email é obrigatório</string>
+    <string name="error_email_invalid">Email inválido</string>
+    <string name="error_password_required">Senha é obrigatória</string>
+    <string name="error_password_weak">Senha deve ter pelo menos 8 caracteres</string>
+    <string name="error_passwords_dont_match">Senhas não coincidem</string>
+    <string name="error_name_required">Nome é obrigatório</string>
+    <string name="error_phone_invalid">Telefone inválido</string>
+
+    <!-- Password Strength -->
+    <string name="password_requirements">Mínimo 8 caracteres, incluindo letras e números</string>
+    <string name="password_strength_very_weak">Muito Fraca</string>
+    <string name="password_strength_weak">Fraca</string>
+    <string name="password_strength_medium">Média</string>
+    <string name="password_strength_strong">Forte</string>
+    <string name="password_strength_very_strong">Muito Forte</string>
+
+    <!-- Terms and Privacy -->
+    <string name="terms_agreement">Ao criar uma conta, você concorda com nossos</string>
+    <string name="terms_of_service">Termos de Serviço</string>
+    <string name="privacy_policy">Política de Privacidade</string>
+    <string name="dont_have_account">Não tem uma conta?</string>
+    <string name="already_have_account">Já tem uma conta?</string>
+
+    <!-- Dashboard -->
+    <string name="current_weather">Clima Atual</string>
+    <string name="health_risk_assessment">Avaliação de Risco</string>
+    <string name="quick_actions">Ações Rápidas</string>
+    <string name="recommendations">Recomendações</string>
+    <string name="view_all">Ver tudo</string>
+    <string name="add_symptom">Adicionar Sintoma</string>
+    <string name="medications">Medicamentos</string>
+    <string name="reports">Relatórios</string>
+    <string name="emergency">Emergência</string>
+
+    <!-- Weather -->
+    <string name="temperature">Temperatura</string>
+    <string name="humidity">Umidade</string>
+    <string name="wind_speed">Velocidade do Vento</string>
+    <string name="pressure">Pressão</string>
+    <string name="uv_index">Índice UV</string>
+    <string name="air_quality">Qualidade do Ar</string>
+    <string name="visibility">Visibilidade</string>
+    <string name="sunrise">Nascer do Sol</string>
+    <string name="sunset">Pôr do Sol</string>
+    <string name="weather_forecast">Previsão do Tempo</string>
+    <string name="today">Hoje</string>
+    <string name="tomorrow">Amanhã</string>
+    <string name="temp_format">%1$d°C</string>
+    <string name="humidity_format">%1$d%%</string>
+    <string name="wind_format">%1$d km/h</string>
+
+    <!-- Health -->
+    <string name="symptoms">Sintomas</string>
+    <string name="symptom_name">Nome do Sintoma</string>
+    <string name="severity">Intensidade</string>
+    <string name="duration">Duração</string>
+    <string name="triggers">Gatilhos</string>
+    <string name="location_body">Local do Corpo</string>
+    <string name="notes">Observações</string>
+    <string name="save_symptom">Salvar Sintoma</string>
+    <string name="medication_name">Nome do Medicamento</string>
+    <string name="dosage">Dosagem</string>
+    <string name="frequency">Frequência</string>
+    <string name="times">Horários</string>
+    <string name="start_date">Data de Início</string>
+    <string name="end_date">Data de Fim</string>
+    <string name="save_medication">Salvar Medicamento</string>
+    <string name="medication_reminders">Lembretes de Medicamento</string>
+    <string name="take_medication">Tomar Medicamento</string>
+    <string name="skip_dose">Pular Dose</string>
+    <string name="snooze">Adiar</string>
+
+    <!-- Frequencies -->
+    <string name="daily">Diário</string>
+    <string name="weekly">Semanal</string>
+    <string name="as_needed">Conforme Necessário</string>
+
+    <!-- Severity Levels -->
+    <string name="severity_light">Leve</string>
+    <string name="severity_moderate">Moderada</string>
+    <string name="severity_intense">Intensa</string>
+    <string name="severity_severe">Severa</string>
+    <string name="severity_critical">Crítica</string>
+
+    <!-- Risk Levels -->
+    <string name="risk_low">Baixo</string>
+    <string name="risk_medium">Médio</string>
+    <string name="risk_high">Alto</string>
+    <string name="risk_critical">Crítico</string>
+
+    <!-- Reports -->
+    <string name="generate_report">Gerar Relatório</string>
+    <string name="report_period">Período do Relatório</string>
+    <string name="last_7_days">Últimos 7 dias</string>
+    <string name="last_30_days">Últimos 30 dias</string>
+    <string name="last_90_days">Últimos 90 dias</string>
+    <string name="last_year">Último ano</string>
+    <string name="export_report">Exportar Relatório</string>
+    <string name="share_report">Compartilhar Relatório</string>
+    <string name="health_report">Relatório de Saúde</string>
+    <string name="weather_report">Relatório Meteorológico</string>
+    <string name="correlation_report">Relatório de Correlação</string>
+
+    <!-- Alerts -->
+    <string name="weather_alerts">Alertas Meteorológicos</string>
+    <string name="health_alerts">Alertas de Saúde</string>
+    <string name="mark_as_read">Marcar como Lido</string>
+    <string name="mark_all_as_read">Marcar Todos como Lidos</string>
+    <string name="dismiss_alert">Dispensar Alerta</string>
+    <string name="view_alerts">Ver Alertas</string>
+
+    <!-- Profile -->
+    <string name="personal_info">Informações Pessoais</string>
+    <string name="medical_conditions">Condições Médicas</string>
+    <string name="allergies">Alergias</string>
+    <string name="emergency_contacts">Contatos de Emergência</string>
+    <string name="add_condition">Adicionar Condição</string>
+    <string name="add_allergy">Adicionar Alergia</string>
+    <string name="add_contact">Adicionar Contato</string>
+    <string name="edit_profile">Editar Perfil</string>
+    <string name="profile_completeness">Completude do Perfil</string>
+    <string name="upload_photo">Enviar Foto</string>
+    <string name="take_photo">Tirar Foto</string>
+    <string name="choose_from_gallery">Escolher da Galeria</string>
+
+    <!-- Emergency -->
+    <string name="emergency_button">Botão de Emergência</string>
+    <string name="call_emergency">Ligar para Emergência</string>
+    <string name="send_location">Enviar Localização</string>
+    <string name="contact_doctor">Contatar Médico</string>
+    <string name="samu">SAMU (192)</string>
+    <string name="fire_department">Bombeiros (193)</string>
+    <string name="police">Polícia (190)</string>
+
+    <!-- Settings -->
+    <string name="notifications">Notificações</string>
+    <string name="privacy">Privacidade</string>
+    <string name="language">Idioma</string>
+    <string name="theme">Tema</string>
+    <string name="about">Sobre</string>
+    <string name="help">Ajuda</string>
+    <string name="support">Suporte</string>
+    <string name="version">Versão</string>
+    <string name="data_sync">Sincronização de Dados</string>
+    <string name="auto_sync">Sincronização Automática</string>
+    <string name="sync_frequency">Frequência de Sincronização</string>
+
+    <!-- Notifications Settings -->
+    <string name="weather_alerts_notifications">Alertas Meteorológicos</string>
+    <string name="medication_reminders_notifications">Lembretes de Medicamentos</string>
+    <string name="health_tips_notifications">Dicas de Saúde</string>
+    <string name="emergency_alerts_notifications">Alertas de Emergência</string>
+    <string name="daily_reports_notifications">Relatórios Diários</string>
+    <string name="quiet_hours">Horário Silencioso</string>
+    <string name="quiet_hours_start">Início</string>
+    <string name="quiet_hours_end">Fim</string>
+
+    <!-- Privacy Settings -->
+    <string name="share_location">Compartilhar Localização</string>
+    <string name="share_health_data">Compartilhar Dados de Saúde</string>
+    <string name="analytics_enabled">Permitir Analytics</string>
+    <string name="crash_reports_enabled">Relatórios de Erro</string>
+
+    <!-- Themes -->
+    <string name="theme_auto">Automático</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Escuro</string>
+
+    <!-- Common Actions -->
+    <string name="save">Salvar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="ok">OK</string>
+    <string name="yes">Sim</string>
+    <string name="no">Não</string>
+    <string name="delete">Excluir</string>
+    <string name="edit">Editar</string>
+    <string name="add">Adicionar</string>
+    <string name="remove">Remover</string>
+    <string name="update">Atualizar</string>
+    <string name="refresh">Atualizar</string>
+    <string name="settings">Configurações</string>
+    <string name="search">Pesquisar</string>
+    <string name="filter">Filtrar</string>
+    <string name="sort">Ordenar</string>
+    <string name="share">Compartilhar</string>
+    <string name="export">Exportar</string>
+    <string name="imp">Importar</string>
+    <string name="close">Fechar</string>
+    <string name="back">Voltar</string>
+    <string name="next">Próximo</string>
+    <string name="previous">Anterior</string>
+    <string name="done">Concluído</string>
+    <string name="loading">Carregando...</string>
+    <string name="error">Erro</string>
+    <string name="success">Sucesso</string>
+    <string name="warning">Aviso</string>
+    <string name="info">Informação</string>
+
+    <!-- Time and Date -->
+    <string name="today_date">Hoje</string>
+    <string name="yesterday">Ontem</string>
+    <string name="tomorrow_date">Amanhã</string>
+    <string name="this_week">Esta semana</string>
+    <string name="last_week">Semana passada</string>
+    <string name="this_month">Este mês</string>
+    <string name="last_month">Mês passado</string>
+
+    <!-- Weather Conditions -->
+    <string name="sunny">Ensolarado</string>
+    <string name="cloudy">Nublado</string>
+    <string name="partly_cloudy">Parcialmente nublado</string>
+    <string name="rainy">Chuvoso</string>
+    <string name="stormy">Tempestade</string>
+    <string name="windy">Ventoso</string>
+    <string name="foggy">Nevoeiro</string>
+    <string name="hot">Quente</string>
+    <string name="cold">Frio</string>
+
+    <!-- Air Quality Levels -->
+    <string name="air_quality_good">Boa</string>
+    <string name="air_quality_fair">Razoável</string>
+    <string name="air_quality_moderate">Moderada</string>
+    <string name="air_quality_poor">Ruim</string>
+    <string name="air_quality_very_poor">Muito Ruim</string>
+
+    <!-- UV Index Levels -->
+    <string name="uv_low">Baixo</string>
+    <string name="uv_moderate">Moderado</string>
+    <string name="uv_high">Alto</string>
+    <string name="uv_very_high">Muito Alto</string>
+    <string name="uv_extreme">Extremo</string>
+
+    <!-- Connection and Sync -->
+    <string name="no_internet_connection">Sem conexão com a internet</string>
+    <string name="syncing">Sincronizando...</string>
+    <string name="sync_complete">Sincronização completa</string>
+    <string name="sync_failed">Falha na sincronização</string>
+    <string name="offline_mode">Modo offline</string>
+    <string name="data_will_sync_later">Os dados serão sincronizados quando a conexão for restabelecida</string>
+
+    <!-- Permissions -->
+    <string name="permission_location_title">Permissão de Localização</string>
+    <string name="permission_location_message">O ClimaSaude precisa acessar sua localização para fornecer informações meteorológicas precisas.</string>
+    <string name="permission_notification_title">Permissão de Notificações</string>
+    <string name="permission_notification_message">Permitir notificações para receber alertas importantes sobre clima e lembretes de medicamentos?</string>
+    <string name="permission_camera_title">Permissão de Câmera</string>
+    <string name="permission_camera_message">Permissão necessária para tirar fotos do perfil.</string>
+    <string name="permission_storage_title">Permissão de Armazenamento</string>
+    <string name="permission_storage_message">Permissão necessária para salvar fotos e exportar relatórios.</string>
+    <string name="grant_permission">Conceder Permissão</string>
+    <string name="permission_denied">Permissão negada</string>
+
+    <!-- Empty States -->
+    <string name="no_symptoms_recorded">Nenhum sintoma registrado</string>
+    <string name="no_medications_added">Nenhum medicamento adicionado</string>
+    <string name="no_alerts_available">Nenhum alerta disponível</string>
+    <string name="no_reports_generated">Nenhum relatório gerado</string>
+    <string name="no_data_available">Nenhum dado disponível</string>
+    <string name="start_tracking">Comece a registrar seus dados de saúde</string>
+
+    <!-- Content Descriptions -->
+    <string name="weather_icon">Ícone do clima</string>
+    <string name="profile_picture">Foto do perfil</string>
+    <string name="medication_icon">Ícone de medicamento</string>
+    <string name="symptom_icon">Ícone de sintoma</string>
+    <string name="alert_icon">Ícone de alerta</string>
+    <string name="chart_icon">Ícone de gráfico</string>
+
+    <!-- Generic -->
+    <string name="or">ou</string>
+    <string name="and">e</string>
+    <string name="register_subtitle">Crie sua conta para começar a monitorar sua saúde em relação ao clima</string>
+</resources>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spacing -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_small">8dp</dimen>
+    <dimen name="spacing_medium">16dp</dimen>
+    <dimen name="spacing_large">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+    <dimen name="spacing_xxl">48dp</dimen>
+
+    <!-- Margins -->
+    <dimen name="margin_xs">4dp</dimen>
+    <dimen name="margin_small">8dp</dimen>
+    <dimen name="margin_medium">16dp</dimen>
+    <dimen name="margin_large">24dp</dimen>
+    <dimen name="margin_xl">32dp</dimen>
+
+    <!-- Padding -->
+    <dimen name="padding_xs">4dp</dimen>
+    <dimen name="padding_small">8dp</dimen>
+    <dimen name="padding_medium">16dp</dimen>
+    <dimen name="padding_large">24dp</dimen>
+    <dimen name="padding_xl">32dp</dimen>
+
+    <!-- Text Sizes -->
+    <dimen name="text_size_caption">12sp</dimen>
+    <dimen name="text_size_small">14sp</dimen>
+    <dimen name="text_size_body">16sp</dimen>
+    <dimen name="text_size_large">18sp</dimen>
+    <dimen name="text_size_title">20sp</dimen>
+    <dimen name="text_size_headline">24sp</dimen>
+    <dimen name="text_size_display">28sp</dimen>
+
+    <!-- Button Sizes -->
+    <dimen name="button_height">48dp</dimen>
+    <dimen name="button_height_large">56dp</dimen>
+    <dimen name="button_corner_radius">8dp</dimen>
+    <dimen name="button_corner_radius_large">12dp</dimen>
+
+    <!-- Card Sizes -->
+    <dimen name="card_corner_radius">8dp</dimen>
+    <dimen name="card_corner_radius_large">12dp</dimen>
+    <dimen name="card_elevation">2dp</dimen>
+    <dimen name="card_elevation_large">4dp</dimen>
+
+    <!-- Icon Sizes -->
+    <dimen name="icon_size_small">16dp</dimen>
+    <dimen name="icon_size_medium">24dp</dimen>
+    <dimen name="icon_size_large">32dp</dimen>
+    <dimen name="icon_size_xl">48dp</dimen>
+    <dimen name="icon_size_xxl">64dp</dimen>
+
+    <!-- Avatar Sizes -->
+    <dimen name="avatar_size_small">32dp</dimen>
+    <dimen name="avatar_size_medium">48dp</dimen>
+    <dimen name="avatar_size_large">64dp</dimen>
+    <dimen name="avatar_size_xl">96dp</dimen>
+
+    <!-- Toolbar and AppBar -->
+    <dimen name="toolbar_height">56dp</dimen>
+    <dimen name="toolbar_elevation">4dp</dimen>
+
+    <!-- Bottom Navigation -->
+    <dimen name="bottom_nav_height">56dp</dimen>
+    <dimen name="bottom_nav_elevation">8dp</dimen>
+
+    <!-- FAB -->
+    <dimen name="fab_size">56dp</dimen>
+    <dimen name="fab_size_mini">40dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
+
+    <!-- List Items -->
+    <dimen name="list_item_height">56dp</dimen>
+    <dimen name="list_item_height_large">72dp</dimen>
+    <dimen name="list_item_padding_horizontal">16dp</dimen>
+    <dimen name="list_item_padding_vertical">12dp</dimen>
+
+    <!-- Input Fields -->
+    <dimen name="input_height">56dp</dimen>
+    <dimen name="input_corner_radius">4dp</dimen>
+    <dimen name="input_stroke_width">2dp</dimen>
+
+    <!-- Progress Indicators -->
+    <dimen name="progress_size_small">24dp</dimen>
+    <dimen name="progress_size_medium">32dp</dimen>
+    <dimen name="progress_size_large">48dp</dimen>
+    <dimen name="progress_stroke_width">4dp</dimen>
+
+    <!-- Weather UI -->
+    <dimen name="weather_icon_size">64dp</dimen>
+    <dimen name="weather_icon_size_large">96dp</dimen>
+    <dimen name="temperature_text_size">48sp</dimen>
+    <dimen name="weather_card_height">120dp</dimen>
+
+    <!-- Chart Dimensions -->
+    <dimen name="chart_height">200dp</dimen>
+    <dimen name="chart_height_large">300dp</dimen>
+    <dimen name="chart_margin">16dp</dimen>
+
+    <!-- Quick Actions Grid */
+    <dimen name="quick_action_item_height">80dp</dimen>
+    <dimen name="quick_action_icon_size">32dp</dimen>
+
+    <!- Recommendations */
+    <dimen name="recommendation_card_height">100dp</dimen>
+    <dimen name="recommendation_icon_size">24dp</dimen>
+
+    <!- Profile Picture Sizes -->
+    <dimen name="profile_picture_small">32dp</dimen>
+    <dimen name="profile_picture_medium">48dp</dimen>
+    <dimen name="profile_picture_large">80dp</dimen>
+    <dimen name="profile_picture_xl">120dp</dimen>
+
+    <!-- Medication Item */
+    <dimen name="medication_item_height">72dp</dimen>
+    <dimen name="medication_icon_size">40dp</dimen>
+
+    <!- Symptom Item */
+    <dimen name="symptom_item_height">80dp</dimen>
+    <dimen name="severity_indicator_size">24dp</dimen>
+
+    <!- Alert Item */
+    <dimen name="alert_item_height">88dp</dimen>
+    <dimen name="alert_icon_size">32dp</dimen>
+
+    <!- Emergency Contact Item */
+    <dimen name="emergency_contact_height">72dp</dimen>
+    <dimen name="emergency_contact_avatar_size">48dp</dimen>
+
+    <!- Bottom Sheet */
+    <dimen name="bottom_sheet_peek_height">120dp</dimen>
+    <dimen name="bottom_sheet_corner_radius">16dp</dimen>
+
+    <!- Dialog */
+    <dimen name="dialog_corner_radius">12dp</dimen>
+    <dimen name="dialog_elevation">8dp</dimen>
+
+    <!- Divider */
+    <dimen name="divider_height">1dp</dimen>
+    <dimen name="divider_margin">16dp</dimen>
+
+    <!- Minimum Touch Target */
+    <dimen name="min_touch_target">48dp</dimen>
+
+    <!- Maximum Width for Components */
+    <dimen name="max_content_width">600dp</dimen>
+
+    <!- Accessibility -->
+    <dimen name="accessibility_focus_highlight">2dp</dimen>
+
+    <dimen name="dialog_corner_radius">16dp</dimen>
+    <dimen name="dialog_elevation">8dp</dimen>
+    <dimen name="divider_height">1dp</dimen>
+    <dimen name="divider_margin">8dp</dimen>
+    <dimen name="quick_action_item_height">48dp</dimen>
+    <dimen name="bottom_sheet_corner_radius">24dp</dimen>
+</resources>

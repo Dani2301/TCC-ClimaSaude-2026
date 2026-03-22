@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "823813131612",
+    "project_id": "climasaude-72450",
+    "storage_bucket": "climasaude-72450.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:823813131612:android:95b42cb26cb93634120599",
+        "android_client_info": {
+          "package_name": "com.climasaude"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "823813131612-7pp874hd5a7n9pb4jac16a4odhuclmmh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByvyr2y_ASg47G67RCayyJI7zdfSU9u3c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "823813131612-7pp874hd5a7n9pb4jac16a4odhuclmmh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

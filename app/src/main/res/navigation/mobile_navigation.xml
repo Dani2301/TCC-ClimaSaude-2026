@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_dashboard">
+
+    <fragment
+        android:id="@+id/navigation_dashboard"
+        android:name="com.climasaude.ui.dashboard.DashboardFragment"
+        android:label="@string/title_dashboard"
+        tools:layout="@layout/fragment_dashboard" />
+
+    <fragment
+        android:id="@+id/navigation_weather"
+        android:name="com.climasaude.ui.weather.WeatherFragment"
+        android:label="@string/title_weather"
+        tools:layout="@layout/fragment_weather" />
+
+    <fragment
+        android:id="@+id/navigation_health"
+        android:name="com.climasaude.ui.health.HealthFragment"
+        android:label="@string/title_health"
+        tools:layout="@layout/fragment_health" />
+
+    <fragment
+        android:id="@+id/navigation_reports"
+        android:name="com.climasaude.ui.reports.ReportsFragment"
+        android:label="@string/title_reports"
+        tools:layout="@layout/fragment_reports" />
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.climasaude.ui.profile.ProfileFragment"
+        android:label="@string/title_profile"
+        tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/navigation_alerts"
+        android:name="com.climasaude.ui.alerts.AlertsFragment"
+        android:label="@string/title_alerts"
+        tools:layout="@layout/fragment_alerts" />
+
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.climasaude.ui.settings.SettingsFragment"
+        android:label="@string/title_settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/navigation_emergency_contacts"
+        android:name="com.climasaude.ui.emergency.EmergencyContactsFragment"
+        android:label="@string/title_emergency_contacts"
+        tools:layout="@layout/fragment_emergency_contacts" />
+
+    <action
+        android:id="@+id/action_global_emergency"
+        app:destination="@id/navigation_emergency_contacts" />
+
+</navigation>

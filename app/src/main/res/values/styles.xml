@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base Application Theme -->
+    <style name="Theme.ClimaSaude" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_variant</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorSecondaryVariant">@color/secondary_variant</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/on_error</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorBackground">@color/background</item>
+        <item name="colorOnBackground">@color/on_background</item>
+        <item name="android:statusBarColor">@color/primary_variant</item>
+        <item name="android:navigationBarColor">@color/surface</item>
+    </style>
+
+    <!-- App Bar Theme Overlay -->
+    <style name="ThemeOverlay.ClimaSaude.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar" />
+
+    <!-- Popup Theme Overlay -->
+    <style name="ThemeOverlay.ClimaSaude.PopupOverlay" parent="ThemeOverlay.Material3.Light" />
+
+    <!-- Card Styles -->
+    <style name="ClimaSaude.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">@dimen/card_corner_radius</item>
+        <item name="cardElevation">@dimen/card_elevation</item>
+        <item name="android:layout_margin">@dimen/margin_small</item>
+    </style>
+
+    <style name="ClimaSaude.Card.Large">
+        <item name="cardCornerRadius">@dimen/card_corner_radius_large</item>
+        <item name="cardElevation">@dimen/card_elevation_large</item>
+    </style>
+
+    <!-- Button Styles -->
+    <style name="ClimaSaude.Button" parent="Widget.Material3.Button">
+        <item name="android:layout_height">@dimen/button_height</item>
+        <item name="cornerRadius">@dimen/button_corner_radius</item>
+        <item name="android:textSize">@dimen/text_size_body</item>
+    </style>
+
+    <style name="ClimaSaude.Button.Large">
+        <item name="android:layout_height">@dimen/button_height_large</item>
+        <item name="cornerRadius">@dimen/button_corner_radius_large</item>
+        <item name="android:textSize">@dimen/text_size_large</item>
+    </style>
+
+    <style name="ClimaSaude.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:layout_height">@dimen/button_height</item>
+        <item name="cornerRadius">@dimen/button_corner_radius</item>
+        <item name="android:textSize">@dimen/text_size_body</item>
+    </style>
+
+    <style name="ClimaSaude.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:layout_height">@dimen/button_height</item>
+        <item name="android:textSize">@dimen/text_size_body</item>
+    </style>
+
+    <!-- Text Input Layout Styles -->
+    <style name="ClimaSaude.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeWidth">@dimen/input_stroke_width</item>
+        <item name="boxCornerRadiusTopStart">@dimen/input_corner_radius</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/input_corner_radius</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/input_corner_radius</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/input_corner_radius</item>
+    </style>
+
+    <!-- Text Styles -->
+    <style name="ClimaSaude.Text" parent="Widget.AppCompat.TextView">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="ClimaSaude.Text.Headline" parent="ClimaSaude.Text">
+        <item name="android:textSize">@dimen/text_size_headline</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+
+    <style name="ClimaSaude.Text.Title" parent="ClimaSaude.Text">
+        <item name="android:textSize">@dimen/text_size_title</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="ClimaSaude.Text.Body" parent="ClimaSaude.Text">
+        <item name="android:textSize">@dimen/text_size_body</item>
+    </style>
+
+    <style name="ClimaSaude.Text.Caption" parent="ClimaSaude.Text">
+        <item name="android:textSize">@dimen/text_size_caption</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <style name="ClimaSaude.Text.Temperature" parent="ClimaSaude.Text">
+        <item name="android:textSize">@dimen/temperature_text_size</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+
+    <!-- Chip Styles -->
+    <style name="ClimaSaude.Chip" parent="Widget.Material3.Chip.Suggestion">
+        <item name="chipCornerRadius">16dp</item>
+        <item name="android:textSize">@dimen/text_size_small</item>
+    </style>
+
+    <style name="ClimaSaude.Chip.Filter" parent="Widget.Material3.Chip.Filter">
+        <item name="chipCornerRadius">16dp</item>
+        <item name="android:textSize">@dimen/text_size_small</item>
+    </style>
+
+    <style name="ClimaSaude.Chip.Choice" parent="Widget.Material3.Chip.Assist">
+        <item name="chipCornerRadius">16dp</item>
+        <item name="android:textSize">@dimen/text_size_small</item>
+    </style>
+
+    <!-- Risk Level Chip Styles -->
+    <style name="ClimaSaude.Chip.Risk.Low">
+        <item name="chipBackgroundColor">@color/risk_low</item>
+        <item name="android:textColor">@color/on_success</item>
+    </style>
+
+    <style name="ClimaSaude.Chip.Risk.Medium">
+        <item name="chipBackgroundColor">@color/risk_medium</item>
+        <item name="android:textColor">@color/on_warning</item>
+    </style>
+
+    <style name="ClimaSaude.Chip.Risk.High">
+        <item name="chipBackgroundColor">@color/risk_high</item>
+        <item name="android:textColor">@color/on_error</item>
+    </style>
+
+    <style name="ClimaSaude.Chip.Risk.Critical">
+        <item name="chipBackgroundColor">@color/risk_critical</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <!-- FAB Styles -->
+    <style name="ClimaSaude.FAB" parent="Widget.Material3.FloatingActionButton.Primary">
+        <item name="android:layout_margin">@dimen/fab_margin</item>
+    </style>
+
+    <style name="ClimaSaude.FAB.Emergency">
+        <item name="backgroundTint">@color/error</item>
+        <item name="tint">@color/on_error</item>
+    </style>
+
+    <!-- Progress Indicator Styles -->
+    <style name="ClimaSaude.ProgressIndicator" parent="Widget.Material3.CircularProgressIndicator">
+        <item name="android:layout_width">@dimen/progress_size_medium</item>
+        <item name="android:layout_height">@dimen/progress_size_medium</item>
+        <item name="trackThickness">@dimen/progress_stroke_width</item>
+    </style>
+
+    <style name="ClimaSaude.ProgressIndicator.Small">
+        <item name="android:layout_width">@dimen/progress_size_small</item>
+        <item name="android:layout_height">@dimen/progress_size_small</item>
+    </style>
+
+    <style name="ClimaSaude.ProgressIndicator.Large">
+        <item name="android:layout_width">@dimen/progress_size_large</item>
+        <item name="android:layout_height">@dimen/progress_size_large</item>
+    </style>
+
+    <!-- Divider Style -->
+    <style name="ClimaSaude.Divider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/divider_height</item>
+        <item name="android:background">?attr/colorOutlineVariant</item>
+        <item name="android:layout_marginStart">@dimen/divider_margin</item>
+        <item name="android:layout_marginEnd">@dimen/divider_margin</item>
+    </style>
+
+    <!-- Bottom Sheet Style -->
+    <style name="ClimaSaude.BottomSheetDialog" parent="Theme.Material3.DayNight.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/ClimaSaude.BottomSheet</item>
+    </style>
+
+    <style name="ClimaSaude.BottomSheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearanceOverlay">@style/ClimaSaude.ShapeAppearance.BottomSheet</item>
+    </style>
+
+    <style name="ClimaSaude.ShapeAppearance.BottomSheet" parent="ShapeAppearance.Material3.Corner.Top">
+        <item name="cornerSizeTopLeft">@dimen/bottom_sheet_corner_radius</item>
+        <item name="cornerSizeTopRight">@dimen/bottom_sheet_corner_radius</item>
+    </style>
+
+    <!-- List Item Styles -->
+    <style name="ClimaSaude.ListItem">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/list_item_height</item>
+        <item name="android:paddingStart">@dimen/list_item_padding_horizontal</item>
+        <item name="android:paddingEnd">@dimen/list_item_padding_horizontal</item>
+        <item name="android:paddingTop">@dimen/list_item_padding_vertical</item>
+        <item name="android:paddingBottom">@dimen/list_item_padding_vertical</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:gravity">center_vertical</item>
+    </style>
+
+    <style name="ClimaSaude.ListItem.Large">
+        <item name="android:layout_height">@dimen/list_item_height_large</item>
+    </style>
+
+    <!-- Weather Icon Styles -->
+    <style name="ClimaSaude.WeatherIcon">
+        <item name="android:layout_width">@dimen/weather_icon_size</item>
+        <item name="android:layout_height">@dimen/weather_icon_size</item>
+        <item name="android:scaleType">centerCrop</item>
+    </style>
+
+    <style name="ClimaSaude.WeatherIcon.Large">
+        <item name="android:layout_width">@dimen/weather_icon_size_large</item>
+        <item name="android:layout_height">@dimen/weather_icon_size_large</item>
+    </style>
+
+    <!-- Avatar Styles -->
+    <style name="ClimaSaude.Avatar">
+        <item name="android:layout_width">@dimen/avatar_size_medium</item>
+        <item name="android:layout_height">@dimen/avatar_size_medium</item>
+        <item name="android:scaleType">centerCrop</item>
+    </style>
+
+    <style name="ClimaSaude.Avatar.Small">
+        <item name="android:layout_width">@dimen/avatar_size_small</item>
+        <item name="android:layout_height">@dimen/avatar_size_small</item>
+    </style>
+
+    <style name="ClimaSaude.Avatar.Large">
+        <item name="android:layout_width">@dimen/avatar_size_large</item>
+        <item name="android:layout_height">@dimen/avatar_size_large</item>
+    </style>
+
+    <!-- Quick Action Styles -->
+    <style name="ClimaSaude.QuickAction">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/quick_action_item_height</item>
+        <item name="android:padding">@dimen/padding_medium</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+    </style>
+
+    <!-- Alert Severity Styles -->
+    <style name="ClimaSaude.Alert.Low">
+        <item name="android:backgroundTint">@color/severity_light</item>
+    </style>
+
+    <style name="ClimaSaude.Alert.Medium">
+        <item name="android:backgroundTint">@color/severity_moderate</item>
+    </style>
+
+    <style name="ClimaSaude.Alert.High">
+        <item name="android:backgroundTint">@color/severity_severe</item>
+    </style>
+
+    <style name="ClimaSaude.Alert.Critical">
+        <item name="android:backgroundTint">@color/severity_critical</item>
+    </style>
+
+    <!-- Dialog Styles -->
+    <style name="ClimaSaude.Dialog" parent="Theme.Material3.DayNight.Dialog">
+        <item name="dialogCornerRadius">@dimen/dialog_corner_radius</item>
+        <item name="android:windowElevation">@dimen/dialog_elevation</item>
+    </style>
+
+    <!-- Splash Screen Theme -->
+    <style name="Theme.ClimaSaude.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/primary</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_clima_saude_logo</item>
+        <item name="windowSplashScreenAnimationDuration">1000</item>
+        <item name="postSplashScreenTheme">@style/Theme.ClimaSaude</item>
+    </style>
+
+    <!-- No Action Bar Theme -->
+    <style name="Theme.ClimaSaude.NoActionBar" parent="Theme.ClimaSaude">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <!-- Fullscreen Theme -->
+    <style name="Theme.ClimaSaude.Fullscreen">
+        <item name="android:windowFullscreen">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="ClimaSaude.Alert">
+        <item name="android:textColor">@color/on_error</item>
+        <item name="android:background">@color/severity_critical</item>
+    </style>
+
+    <style name="ClimaSaude">
+        <item name="android:textColorPrimary">@color/risk_high</item>
+        <item name="android:background">@color/severity_light</item>
+    </style>
+
+    <style name="ClimaSaude.Chip.Risk">
+        <item name="android:background">@color/risk_critical</item>
+        <item name="android:textColor">@color/on_error</item>
+    </style>
+    <style name="ShapeAppearance.Material3.Corner.Top" parent="ShapeAppearance.MaterialComponents">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">24dp</item>
+        <item name="cornerSizeTopRight">24dp</item>
+    </style>
+    <style name="Theme.SplashScreen" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="windowSplashScreenBackground">@color/primary</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_clima_saude_logo</item>
+        <item name="windowSplashScreenAnimationDuration">1000</item>
+        <item name="postSplashScreenTheme">@style/Theme.ClimaSaude</item>
+    </style>
+
+</resources>
