@@ -12,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
@@ -48,7 +50,6 @@ class MainActivity : AppCompatActivity() {
         when {
             permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                     permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true -> {
-                // Location permission granted
                 dashboardViewModel.refreshData()
             }
             else -> {
@@ -103,7 +104,6 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        // Update toolbar title based on navigation
         navController.addOnDestinationChangedListener { _, destination, _ ->
             binding.toolbar.title = when (destination.id) {
                 R.id.navigation_dashboard -> "Dashboard"
@@ -120,38 +120,48 @@ class MainActivity : AppCompatActivity() {
     private fun setupBottomNavigation() {
         binding.bottomNavigation.setupWithNavController(navController)
 
-        // Handle reselection of current tab
+        // Solução para Navegação Reversa. Modificado por: Daniel
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            if (item.itemId == navController.currentDestination?.id) {
+                // Se já estiver na aba, não faz nada (ou faz refresh)
+                return@setOnItemSelectedListener false
+            }
+
+            val navOptions = NavOptions.Builder()
+                .setLaunchSingleTop(true)
+                .setRestoreState(true)
+                .setPopUpTo(navController.graph.findStartDestination().id, inclusive = false, saveState = true)
+                .build()
+
+            // Forçar retorno para o Dashboard se o botão for clicado. Modificado por: Daniel
+            if (item.itemId == R.id.navigation_dashboard) {
+                navController.popBackStack(R.id.navigation_dashboard, false)
+            } else {
+                navController.navigate(item.itemId, null, navOptions)
+            }
+            true
+        }
+
         binding.bottomNavigation.setOnItemReselectedListener { item ->
-            when (item.itemId) {
-                R.id.navigation_dashboard -> {
-                    dashboardViewModel.refreshData()
-                }
-                R.id.navigation_weather -> {
-                    // Scroll to top or refresh
-                }
-                R.id.navigation_health -> {
-                    // Scroll to top or refresh
-                }
+            if (item.itemId == R.id.navigation_dashboard) {
+                // Se clicar no Dashboard estando em uma tela "em cima" dele, volta para o Dashboard. Modificado por: Daniel
+                navController.popBackStack(R.id.navigation_dashboard, false)
+                dashboardViewModel.refreshData()
             }
         }
     }
 
     private fun observeViewModels() {
-        // Observe alerts for badge
         lifecycleScope.launch {
             alertsViewModel.unreadCount.collect { count ->
                 updateAlertsBadge(count)
             }
         }
 
-        // Observe dashboard state for general UI updates
         lifecycleScope.launch {
-            dashboardViewModel.dashboardState.collect { state ->
-                // Handle loading states, errors, etc.
-            }
+            dashboardViewModel.dashboardState.collect { state -> }
         }
 
-        // Observe error messages
         lifecycleScope.launch {
             dashboardViewModel.errorMessage.collect { error ->
                 error?.let {
@@ -164,21 +174,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateAlertsBadge(count: Int) {
         val badge = binding.bottomNavigation.getOrCreateBadge(R.id.navigation_alerts)
-        if (count > 0) {
-            badge.number = count
-            badge.isVisible = true
-        } else {
-            badge.isVisible = false
-        }
+        badge.number = count
+        badge.isVisible = count > 0
     }
 
     private fun checkPermissions() {
-        // Check location permissions
         if (!hasLocationPermission()) {
             requestLocationPermissions()
         }
 
-        // Check notification permissions (Android 13+)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (!hasNotificationPermission()) {
                 requestNotificationPermission()
@@ -187,34 +191,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hasLocationPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun hasNotificationPermission(): Boolean {
         return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        } else true
     }
 
     private fun requestLocationPermissions() {
-        locationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
+        locationPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
     }
 
     private fun requestNotificationPermission() {
@@ -226,10 +214,8 @@ class MainActivity : AppCompatActivity() {
     private fun showLocationPermissionDialog() {
         MaterialAlertDialogBuilder(this)
             .setTitle("Permissão de Localização")
-            .setMessage("O ClimaSaude precisa acessar sua localização para fornecer informações meteorológicas precisas e recomendações personalizadas de saúde.")
-            .setPositiveButton("Permitir") { _, _ ->
-                requestLocationPermissions()
-            }
+            .setMessage("O ClimaSaude precisa acessar sua localização para fornecer informações meteorológicas precisas.")
+            .setPositiveButton("Permitir") { _, _ -> requestLocationPermissions() }
             .setNegativeButton("Agora não", null)
             .show()
     }
@@ -237,38 +223,28 @@ class MainActivity : AppCompatActivity() {
     private fun showNotificationPermissionDialog() {
         MaterialAlertDialogBuilder(this)
             .setTitle("Permissão de Notificações")
-            .setMessage("Permitir notificações para receber alertas importantes sobre clima e lembretes de medicamentos?")
-            .setPositiveButton("Permitir") { _, _ ->
-                requestNotificationPermission()
-            }
+            .setMessage("Permitir notificações para receber alertas importantes?")
+            .setPositiveButton("Permitir") { _, _ -> requestNotificationPermission() }
             .setNegativeButton("Agora não", null)
             .show()
     }
 
     private fun handleIntent(intent: Intent?) {
         intent?.let {
-            when (it.getStringExtra("navigate_to")) {
-                "weather" -> {
-                    navController.navigate(R.id.navigation_weather)
-                }
-                "health" -> {
-                    navController.navigate(R.id.navigation_health)
-
-                    // Handle specific medication reminder
-                    it.getStringExtra("medication_id")?.let { medicationId ->
-                        // Navigate to specific medication or show reminder dialog
-                    }
-                }
-                "emergency" -> {
-                    // Handle emergency alert
-                    it.getStringExtra("alert_id")?.let { alertId ->
-                        navController.navigate(R.id.navigation_alerts)
-                        // Show specific alert
-                    }
-                }
-                "dashboard" -> {
-                    navController.navigate(R.id.navigation_dashboard)
-                }
+            val destination = when (it.getStringExtra("navigate_to")) {
+                "weather" -> R.id.navigation_weather
+                "health" -> R.id.navigation_health
+                "emergency" -> R.id.navigation_alerts
+                "dashboard" -> R.id.navigation_dashboard
+                else -> null
+            }
+            
+            destination?.let { id ->
+                val navOptions = NavOptions.Builder()
+                    .setPopUpTo(R.id.navigation_dashboard, inclusive = false)
+                    .setLaunchSingleTop(true)
+                    .build()
+                navController.navigate(id, null, navOptions)
             }
         }
     }
@@ -305,89 +281,44 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshCurrentData() {
-        val currentDestination = navController.currentDestination?.id
-        when (currentDestination) {
-            R.id.navigation_dashboard -> {
-                dashboardViewModel.refreshData()
-            }
-            R.id.navigation_weather -> {
-                // Trigger weather refresh
-            }
-            R.id.navigation_health -> {
-                // Trigger health data refresh
-            }
-            R.id.navigation_reports -> {
-                // Trigger reports refresh
-            }
+        when (navController.currentDestination?.id) {
+            R.id.navigation_dashboard -> dashboardViewModel.refreshData()
         }
     }
 
     private fun showEmergencyOptions() {
-        val options = arrayOf(
-            "Ligar para SAMU (192)",
-            "Contatar Emergência Pessoal",
-            "Enviar Localização",
-            "Cancelar"
-        )
-
+        val options = arrayOf("Ligar para SAMU (192)", "Contatar Emergência Pessoal", "Cancelar")
         MaterialAlertDialogBuilder(this)
             .setTitle("Opções de Emergência")
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> {
-                        val intent = Intent(Intent.ACTION_CALL).apply {
-                            data = android.net.Uri.parse("tel:192")
-                        }
-                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE)
-                            == PackageManager.PERMISSION_GRANTED) {
-                            startActivity(intent)
+                        val callIntent = Intent(Intent.ACTION_CALL).apply { data = android.net.Uri.parse("tel:192") }
+                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+                            startActivity(callIntent)
                         }
                     }
-                    1 -> {
-                        // Show emergency contacts
-                        navController.navigate(R.id.navigation_emergency_contacts)
-                    }
-                    2 -> {
-                        // Send location to emergency contacts
-                        sendLocationToEmergencyContacts()
-                    }
+                    1 -> navController.navigate(R.id.navigation_emergency_contacts)
                 }
             }
             .show()
     }
 
-    private fun sendLocationToEmergencyContacts() {
-        // Implementation for sending location to emergency contacts
-        lifecycleScope.launch {
-            try {
-                // Get current location and send to emergency contacts
-                // This would use the LocationUtils and emergency contacts repository
-            } catch (e: Exception) {
-                showError("Erro ao enviar localização: ${e.message}")
-            }
-        }
-    }
-
     private fun showLogoutDialog() {
         MaterialAlertDialogBuilder(this)
             .setTitle("Sair da Conta")
-            .setMessage("Tem certeza que deseja sair da sua conta?")
-            .setPositiveButton("Sair") { _, _ ->
-                logout()
-            }
+            .setMessage("Tem certeza que deseja sair?")
+            .setPositiveButton("Sair") { _, _ -> logout() }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
     private fun logout() {
-        // Clear all notifications
         notificationUtils.cancelAllNotifications()
-
-        // Navigate to login
-        val intent = Intent(this, LoginActivity::class.java).apply {
+        val loginIntent = Intent(this, LoginActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        startActivity(intent)
+        startActivity(loginIntent)
         finish()
     }
 
@@ -404,8 +335,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (!navController.popBackStack()) {
+        if (navController.currentDestination?.id == R.id.navigation_dashboard) {
             super.onBackPressed()
+        } else {
+            if (!navController.popBackStack()) {
+                super.onBackPressed()
+            }
         }
     }
 }

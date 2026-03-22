@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.climasaude.R
 import com.climasaude.databinding.FragmentDashboardBinding
@@ -46,28 +47,34 @@ class DashboardFragment : Fragment() {
             viewModel.refreshData()
         }
 
+        // Usar NavOptions para garantir que o BottomNavigation funcione corretamente. Modificado por: Daniel
+        val navOptions = NavOptions.Builder()
+            .setLaunchSingleTop(true)
+            .setPopUpTo(R.id.navigation_dashboard, inclusive = false)
+            .build()
+
         binding.cardAddSymptom.setOnClickListener {
-            findNavController().navigate(R.id.navigation_health)
+            findNavController().navigate(R.id.navigation_health, null, navOptions)
         }
 
         binding.cardMedicationReminder.setOnClickListener {
-            findNavController().navigate(R.id.navigation_health)
+            findNavController().navigate(R.id.navigation_health, null, navOptions)
         }
 
         binding.cardViewReports.setOnClickListener {
-            findNavController().navigate(R.id.navigation_reports)
+            findNavController().navigate(R.id.navigation_reports, null, navOptions)
         }
 
         binding.cardEmergency.setOnClickListener {
-            findNavController().navigate(R.id.navigation_alerts)
+            findNavController().navigate(R.id.navigation_alerts, null, navOptions)
         }
 
         binding.cardProfilePicture.setOnClickListener {
-            findNavController().navigate(R.id.navigation_profile)
+            findNavController().navigate(R.id.navigation_profile, null, navOptions)
         }
         
         binding.cardCurrentWeather.setOnClickListener {
-            findNavController().navigate(R.id.navigation_weather)
+            findNavController().navigate(R.id.navigation_weather, null, navOptions)
         }
     }
 
@@ -75,9 +82,7 @@ class DashboardFragment : Fragment() {
         lifecycleScope.launch {
             viewModel.dashboardState.collect { state ->
                 when (state) {
-                    is DashboardState.Loading -> {
-                        // Show loading if needed (SwipeRefresh handles it mostly)
-                    }
+                    is DashboardState.Loading -> { }
                     is DashboardState.Success -> {
                         updateWeatherUI()
                         updateHealthRiskUI()
@@ -114,7 +119,6 @@ class DashboardFragment : Fragment() {
         binding.textviewHumidity.text = getString(R.string.humidity_format, weather.current.humidity)
         binding.textviewWindSpeed.text = getString(R.string.wind_format, weather.current.windSpeed.toInt())
         
-        // Icon selection
         val iconRes = when {
             weather.current.condition.contains("Cloud", true) -> R.drawable.ic_weather
             weather.current.condition.contains("Rain", true) -> R.drawable.ic_weather_alert_moderate
