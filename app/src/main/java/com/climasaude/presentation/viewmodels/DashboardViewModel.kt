@@ -60,11 +60,24 @@ class DashboardViewModel @Inject constructor(
                 _isRefreshing.value = true
                 _dashboardState.value = DashboardState.Loading
 
-                val location = locationUtils.getCurrentLocation()
-                if (location != null) {
-                    loadWeatherData(location.latitude, location.longitude, forceRefresh)
+                // Adicionado Sincronização de localização entre Clima e Dashboard. Modificado por: Daniel
+                val savedLat = appPreferences.getLastLatitude()
+                val savedLon = appPreferences.getLastLongitude()
+
+                if (savedLat != 0.0 && savedLon != 0.0 && !forceRefresh) {
+                    // Se houver uma localização pesquisada recentemente, usa ela
+                    loadWeatherData(savedLat, savedLon, false)
                 } else {
-                    _dashboardState.value = DashboardState.Error("Não foi possível obter localização")
+                    // Senão, recorre ao GPS
+                    val location = locationUtils.getCurrentLocation()
+                    if (location != null) {
+                        loadWeatherData(location.latitude, location.longitude, forceRefresh)
+                    } else if (savedLat != 0.0) {
+                        // Fallback para a última localização salva se GPS falhar
+                        loadWeatherData(savedLat, savedLon, forceRefresh)
+                    } else {
+                        _dashboardState.value = DashboardState.Error("Não foi possível obter localização")
+                    }
                 }
 
             } catch (e: Exception) {
@@ -122,6 +135,7 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun refreshData() {
+        // Ao dar refresh manual (Swipe), forçamos a busca pela localização atual (GPS)
         loadDashboardData(forceRefresh = true)
     }
 

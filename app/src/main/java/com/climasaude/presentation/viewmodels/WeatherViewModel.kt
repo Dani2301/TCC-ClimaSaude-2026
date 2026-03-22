@@ -85,8 +85,10 @@ class WeatherViewModel @Inject constructor(
                     is Resource.Success -> {
                         _currentWeather.value = result.data
                         result.data?.let { weather ->
+                            // Salvar localização pesquisada para sincronizar com o Dashboard. Modificado por: Daniel
+                            appPreferences.setLastLocation(weather.location.latitude, weather.location.longitude)
+                            
                             _riskAnalysis.value = weatherUseCases.analyzeWeatherRisk(weather)
-                            // Update forecast for new location
                             loadForecastAndAlerts(weather.location.latitude, weather.location.longitude)
                         }
                     }
@@ -104,14 +106,13 @@ class WeatherViewModel @Inject constructor(
     }
 
     private suspend fun loadWeatherForLocation(lat: Double, lon: Double, forceRefresh: Boolean) {
-        // Load current weather
         when (val result = weatherUseCases.getCurrentWeather(lat, lon, forceRefresh)) {
             is Resource.Success -> {
                 _currentWeather.value = result.data
-
-                // Analyze weather risks
                 result.data?.let { weather ->
                     _riskAnalysis.value = weatherUseCases.analyzeWeatherRisk(weather)
+                    // Ao carregar com sucesso, atualizamos a última localização conhecida. Modificado por: Daniel
+                    appPreferences.setLastLocation(weather.location.latitude, weather.location.longitude)
                 }
             }
             is Resource.Error -> {
@@ -125,7 +126,6 @@ class WeatherViewModel @Inject constructor(
     }
 
     private suspend fun loadForecastAndAlerts(lat: Double, lon: Double) {
-        // Load forecast
         when (val result = weatherUseCases.getWeatherForecast(lat, lon, 7)) {
             is Resource.Success -> {
                 _forecast.value = result.data ?: emptyList()
@@ -136,7 +136,6 @@ class WeatherViewModel @Inject constructor(
             is Resource.Loading -> Unit
         }
 
-        // Load weather alerts
         when (val result = weatherUseCases.getWeatherAlerts(lat, lon)) {
             is Resource.Success -> {
                 _weatherAlerts.value = result.data ?: emptyList()
@@ -197,11 +196,8 @@ class WeatherViewModel @Inject constructor(
 
     fun getComfortIndex(): ComfortIndex {
         val weather = _currentWeather.value ?: return ComfortIndex.UNKNOWN
-
         val temp = weather.current.temperature
         val humidity = weather.current.humidity
-
-        // Calculate heat index
         val heatIndex = calculateHeatIndex(temp, humidity)
 
         return when {
@@ -214,19 +210,9 @@ class WeatherViewModel @Inject constructor(
 
     private fun calculateHeatIndex(temp: Double, humidity: Int): Double {
         if (temp < 27) return temp
-
         val t = temp
         val h = humidity.toDouble()
-
-        return -8.78469475556 +
-                1.61139411 * t +
-                2.33854883889 * h +
-                -0.14611605 * t * h +
-                -0.012308094 * t * t +
-                -0.0164248277778 * h * h +
-                0.002211732 * t * t * h +
-                0.00072546 * t * h * h +
-                -0.000003582 * t * t * h * h
+        return -8.78469475556 + 1.61139411 * t + 2.33854883889 * h + -0.14611605 * t * h + -0.012308094 * t * t + -0.0164248277778 * h * h + 0.002211732 * t * t * h + 0.00072546 * t * h * h + -0.000003582 * t * t * h * h
     }
 
     fun clearError() {

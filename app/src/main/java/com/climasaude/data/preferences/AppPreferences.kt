@@ -41,6 +41,10 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         private const val KEY_QUIET_HOURS_ENABLED = "quiet_hours_enabled"
         private const val KEY_QUIET_HOURS_START = "quiet_hours_start"
         private const val KEY_QUIET_HOURS_END = "quiet_hours_end"
+        
+        // Chaves para persistência de localização. Modificado por: Daniel
+        private const val KEY_LAST_LAT = "last_lat"
+        private const val KEY_LAST_LON = "last_lon"
     }
 
     // User Authentication
@@ -189,6 +193,22 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
 
     fun getQuietHoursEnd(): String {
         return sharedPreferences.getString(KEY_QUIET_HOURS_END, "07:00") ?: "07:00"
+    }
+
+    // Last Searched Location. Modificado por: Daniel
+    fun setLastLocation(latitude: Double, longitude: Double) {
+        sharedPreferences.edit()
+            .putFloat(KEY_LAST_LAT, latitude.toFloat())
+            .putFloat(KEY_LAST_LON, longitude.toFloat())
+            .apply()
+    }
+
+    fun getLastLatitude(): Double {
+        return sharedPreferences.getFloat(KEY_LAST_LAT, 0f).toDouble()
+    }
+
+    fun getLastLongitude(): Double {
+        return sharedPreferences.getFloat(KEY_LAST_LON, 0f).toDouble()
     }
 
     // Clear all data

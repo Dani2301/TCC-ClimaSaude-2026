@@ -18,13 +18,10 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
-import com.climasaude.R
 import com.climasaude.databinding.ActivityMainBinding
 import com.climasaude.presentation.viewmodels.DashboardViewModel
 import com.climasaude.presentation.viewmodels.AlertsViewModel
-import com.climasaude.utils.Constants
 import com.climasaude.utils.NotificationUtils
-import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.climasaude.ui.auth.LoginActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -123,7 +120,6 @@ class MainActivity : AppCompatActivity() {
         // Solução para Navegação Reversa. Modificado por: Daniel
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             if (item.itemId == navController.currentDestination?.id) {
-                // Se já estiver na aba, não faz nada (ou faz refresh)
                 return@setOnItemSelectedListener false
             }
 

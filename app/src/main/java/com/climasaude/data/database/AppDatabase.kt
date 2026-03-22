@@ -38,12 +38,15 @@ abstract class AppDatabase : RoomDatabase() {
         private var INSTANCE: AppDatabase? = null
 
         fun getDatabase(context: Context): AppDatabase {
+            // Garantir thread-safety e evitar recriação desnecessária. Modificado por: Daniel
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "clima_saude_database"
                 )
+                    // fallbackToDestructiveMigration avisa que dados serão perdidos em updates de versão. 
+                    // Em produção, deve-se usar .addMigrations(). Modificado por: Daniel
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
