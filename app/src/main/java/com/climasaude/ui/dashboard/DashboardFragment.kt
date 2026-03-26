@@ -1,9 +1,11 @@
 package com.climasaude.ui.dashboard
 
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -13,11 +15,11 @@ import com.climasaude.R
 import com.climasaude.databinding.FragmentDashboardBinding
 import com.climasaude.presentation.viewmodels.DashboardViewModel
 import com.climasaude.presentation.viewmodels.DashboardState
-import com.climasaude.domain.usecases.RiskLevel
 import com.climasaude.domain.usecases.HealthRiskLevel
 import com.climasaude.utils.showSnackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @AndroidEntryPoint
 class DashboardFragment : Fragment() {
@@ -47,7 +49,6 @@ class DashboardFragment : Fragment() {
             viewModel.refreshData()
         }
 
-        // Usar NavOptions para garantir que o BottomNavigation funcione corretamente. Modificado por: Daniel
         val navOptions = NavOptions.Builder()
             .setLaunchSingleTop(true)
             .setPopUpTo(R.id.navigation_dashboard, inclusive = false)
@@ -79,7 +80,7 @@ class DashboardFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.dashboardState.collect { state ->
                 when (state) {
                     is DashboardState.Loading -> { }
@@ -94,18 +95,9 @@ class DashboardFragment : Fragment() {
             }
         }
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isRefreshing.collect { isRefreshing ->
                 binding.swipeRefreshLayout.isRefreshing = isRefreshing
-            }
-        }
-
-        lifecycleScope.launch {
-            viewModel.errorMessage.collect { error ->
-                error?.let {
-                    binding.root.showSnackbar(it)
-                    viewModel.clearError()
-                }
             }
         }
     }
@@ -113,7 +105,7 @@ class DashboardFragment : Fragment() {
     private fun updateWeatherUI() {
         val weather = viewModel.weatherCondition.value ?: return
         
-        binding.textviewLocation.text = "${weather.location.city}, ${weather.location.country}"
+        binding.textviewLocation.text = String.format(Locale.getDefault(), "%s, %s", weather.location.city, weather.location.country)
         binding.textviewTemperature.text = getString(R.string.temp_format, weather.current.temperature.toInt())
         binding.textviewWeatherDescription.text = weather.current.description.replaceFirstChar { it.uppercase() }
         binding.textviewHumidity.text = getString(R.string.humidity_format, weather.current.humidity)
@@ -130,20 +122,27 @@ class DashboardFragment : Fragment() {
     private fun updateHealthRiskUI() {
         val risk = viewModel.healthRiskAssessment.value ?: return
         
-        binding.chipRiskLevel.text = when(risk.overallRisk) {
-            HealthRiskLevel.LOW -> "Baixo"
-            HealthRiskLevel.MEDIUM -> "Médio"
-            HealthRiskLevel.HIGH -> "Alto"
-            HealthRiskLevel.CRITICAL -> "Crítico"
+        val (label, colorRes, strokeColor) = when(risk.overallRisk) {
+            HealthRiskLevel.LOW -> Triple("Baixo", android.R.color.holo_green_dark, android.R.color.transparent)
+            HealthRiskLevel.MEDIUM -> Triple("Médio", android.R.color.holo_orange_light, android.R.color.transparent)
+            HealthRiskLevel.HIGH -> Triple("Alto!", android.R.color.holo_red_light, android.R.color.holo_red_dark)
+            HealthRiskLevel.CRITICAL -> Triple("CRÍTICO", android.R.color.holo_red_dark, android.R.color.black)
         }
-        
-        val colorRes = when(risk.overallRisk) {
-            HealthRiskLevel.LOW -> android.R.color.holo_green_dark
-            HealthRiskLevel.MEDIUM -> android.R.color.holo_orange_light
-            HealthRiskLevel.HIGH -> android.R.color.holo_orange_dark
-            HealthRiskLevel.CRITICAL -> android.R.color.holo_red_dark
-        }
+
+        binding.chipRiskLevel.text = label
         binding.chipRiskLevel.setChipBackgroundColorResource(colorRes)
+        
+        if (risk.overallRisk >= HealthRiskLevel.HIGH) {
+            binding.cardHealthRisk.strokeWidth = 4
+            binding.cardHealthRisk.setStrokeColor(ContextCompat.getColorStateList(requireContext(), strokeColor))
+            binding.textviewRiskDescription.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark))
+        } else {
+            binding.cardHealthRisk.strokeWidth = 0
+            // Resetar cor para o padrão do tema. Modificado por: Daniel
+            val typedValue = TypedValue()
+            requireContext().theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true)
+            binding.textviewRiskDescription.setTextColor(typedValue.data)
+        }
         
         if (risk.recommendations.isNotEmpty()) {
             binding.textviewRiskDescription.text = risk.recommendations.first()

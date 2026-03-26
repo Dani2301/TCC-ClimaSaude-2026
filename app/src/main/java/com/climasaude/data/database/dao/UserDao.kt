@@ -40,4 +40,10 @@ interface UserDao {
 
     @Query("UPDATE users SET notificationPreferences = :preferences WHERE id = :userId")
     suspend fun updateNotificationPreferences(userId: String, preferences: Map<String, Boolean>)
+
+    @Query("UPDATE users SET photoUrl = :photoUrl WHERE id = :userId")
+    suspend fun updatePhotoUrl(userId: String, photoUrl: String)
+
+    @Query("UPDATE users SET privacySettings = :settings WHERE id = :userId")
+    suspend fun updatePrivacySettings(userId: String, settings: Map<String, Boolean>)
 }
