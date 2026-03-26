@@ -3,7 +3,6 @@ package com.climasaude.domain.models
 import androidx.annotation.Keep
 import java.util.Date
 
-// Adicionado @Keep garante que o ProGuard não ofusque os nomes dos campos, permitindo salvamento no Firebase. Modificado por: Daniel
 @Keep
 data class UserProfile(
     val id: String = "",
@@ -28,7 +27,7 @@ data class UserProfile(
 data class MedicalCondition(
     val id: String = "",
     val name: String = "",
-    val severity: String = "",
+    val severity: String = "moderate",
     val diagnosedDate: Date? = null,
     val isWeatherSensitive: Boolean = false,
     val triggerFactors: List<String> = emptyList()
@@ -38,7 +37,7 @@ data class MedicalCondition(
 data class Allergy(
     val id: String = "",
     val name: String = "",
-    val severity: String = "",
+    val severity: String = "moderate",
     val season: String? = null,
     val triggers: List<String> = emptyList()
 )
@@ -72,7 +71,20 @@ data class PrivacySettings(
 
 @Keep
 data class LocationSettings(
-    val autoDetect: Boolean = true
+    val autoDetect: Boolean = true,
+    val savedLocations: List<SavedLocation> = emptyList(),
+    val currentLocation: SavedLocation? = null
+)
+
+@Keep
+data class SavedLocation(
+    val id: String = "",
+    val name: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val city: String = "",
+    val country: String = "",
+    val isDefault: Boolean = false
 )
 
 @Keep

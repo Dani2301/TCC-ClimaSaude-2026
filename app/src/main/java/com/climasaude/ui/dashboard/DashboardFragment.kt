@@ -44,6 +44,12 @@ class DashboardFragment : Fragment() {
         observeViewModel()
     }
 
+    // Senior Fix: Sincronizar localização sempre que o usuário voltar para esta tela. Modificado por: Daniel
+    override fun onResume() {
+        super.onResume()
+        viewModel.loadDashboardData()
+    }
+
     private fun setupClickListeners() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             viewModel.refreshData()
@@ -138,7 +144,6 @@ class DashboardFragment : Fragment() {
             binding.textviewRiskDescription.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark))
         } else {
             binding.cardHealthRisk.strokeWidth = 0
-            // Resetar cor para o padrão do tema. Modificado por: Daniel
             val typedValue = TypedValue()
             requireContext().theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true)
             binding.textviewRiskDescription.setTextColor(typedValue.data)

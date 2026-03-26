@@ -308,6 +308,7 @@ class AuthRepository @Inject constructor(
     }
 
     private fun convertToUser(userProfile: UserProfile): User {
+        val prefs = userProfile.preferences ?: UserPreferences()
         return User(
             id = userProfile.id,
             email = userProfile.email,
@@ -319,20 +320,20 @@ class AuthRepository @Inject constructor(
             height = userProfile.height,
             medicalConditions = userProfile.medicalConditions.map { it.name },
             allergies = userProfile.allergies.map { it.name },
-            theme = userProfile.preferences.theme,
-            language = userProfile.preferences.language,
+            theme = prefs.theme,
+            language = prefs.language,
             notificationPreferences = mapOf(
-                "weatherAlerts" to userProfile.preferences.notifications.weatherAlerts,
-                "medicationReminders" to userProfile.preferences.notifications.medicationReminders,
-                "healthTips" to userProfile.preferences.notifications.healthTips,
-                "emergencyAlerts" to userProfile.preferences.notifications.emergencyAlerts,
-                "dailyReports" to userProfile.preferences.notifications.dailyReports
+                "weatherAlerts" to prefs.notifications.weatherAlerts,
+                "medicationReminders" to prefs.notifications.medicationReminders,
+                "healthTips" to prefs.notifications.healthTips,
+                "emergencyAlerts" to prefs.notifications.emergencyAlerts,
+                "dailyReports" to prefs.notifications.dailyReports
             ),
             privacySettings = mapOf(
-                "shareLocation" to userProfile.preferences.privacy.shareLocation,
-                "shareHealthData" to userProfile.preferences.privacy.shareHealthData,
-                "analyticsEnabled" to userProfile.preferences.privacy.analyticsEnabled,
-                "crashReportsEnabled" to userProfile.preferences.privacy.crashReportsEnabled
+                "shareLocation" to prefs.privacy.shareLocation,
+                "shareHealthData" to prefs.privacy.shareHealthData,
+                "analyticsEnabled" to prefs.privacy.analyticsEnabled,
+                "crashReportsEnabled" to prefs.privacy.crashReportsEnabled
             )
         )
     }

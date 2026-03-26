@@ -35,51 +35,18 @@ class UserRepository @Inject constructor(
     suspend fun updateUserProfile(userProfile: UserProfile): Resource<String> {
         return try {
             val user = convertToUser(userProfile)
-            userDao.updateUser(user)
+            // Usar insertUser (REPLACE) para garantir que peso/altura sejam salvos. Modificado por: Daniel
+            userDao.insertUser(user)
             syncWithFirebase(userProfile)
-            Resource.Success("Perfil atualizado com sucesso")
+            Resource.Success("Perfil atualizado")
         } catch (e: Exception) {
-            Resource.Error("Erro ao atualizar perfil: ${e.message}")
-        }
-    }
-
-    suspend fun updateUserPhoto(userId: String, photoUrl: String): Resource<String> {
-        return try {
-            userDao.updatePhotoUrl(userId, photoUrl)
-            // Optional: sync with Firebase if profile exists
-            getUserProfile(userId)?.let { syncWithFirebase(it) }
-            Resource.Success("Foto atualizada com sucesso")
-        } catch (e: Exception) {
-            Resource.Error("Erro ao atualizar foto: ${e.message}")
-        }
-    }
-
-    suspend fun updateNotificationPreferences(userId: String, preferences: Map<String, Boolean>): Resource<String> {
-        return try {
-            userDao.updateNotificationPreferences(userId, preferences)
-            getUserProfile(userId)?.let { syncWithFirebase(it) }
-            Resource.Success("Preferências de notificação atualizadas")
-        } catch (e: Exception) {
-            Resource.Error("Erro ao atualizar preferências: ${e.message}")
-        }
-    }
-
-    suspend fun updatePrivacySettings(userId: String, settings: Map<String, Boolean>): Resource<String> {
-        return try {
-            userDao.updatePrivacySettings(userId, settings)
-            getUserProfile(userId)?.let { syncWithFirebase(it) }
-            Resource.Success("Configurações de privacidade atualizadas")
-        } catch (e: Exception) {
-            Resource.Error("Erro ao atualizar privacidade: ${e.message}")
+            Resource.Error("Erro ao atualizar: ${e.message}")
         }
     }
 
     private suspend fun syncWithFirebase(userProfile: UserProfile) {
         try {
-            firestore.collection("users")
-                .document(userProfile.id)
-                .set(userProfile)
-                .await()
+            firestore.collection("users").document(userProfile.id).set(userProfile).await()
         } catch (_: Exception) { }
     }
 
@@ -87,117 +54,67 @@ class UserRepository @Inject constructor(
         return try {
             val user = userDao.getUserById(userId)
             if (user != null) {
-                val updatedConditions = user.medicalConditions.toMutableList()
-                if (!updatedConditions.contains(condition)) {
-                    updatedConditions.add(condition)
-                    val updatedUser = user.copy(medicalConditions = updatedConditions, updatedAt = Date())
-                    userDao.updateUser(updatedUser)
+                val trimmed = condition.trim()
+                val updated = user.medicalConditions.toMutableList()
+                if (!updated.contains(trimmed)) {
+                    updated.add(trimmed)
+                    val updatedUser = user.copy(medicalConditions = updated, updatedAt = Date())
+                    userDao.insertUser(updatedUser)
                     syncWithFirebase(convertToUserProfile(updatedUser))
-                    Resource.Success("Condição médica adicionada")
-                } else Resource.Error("Condição já existe")
+                    Resource.Success("Adicionado")
+                } else Resource.Error("Já existe")
             } else Resource.Error("Usuário não encontrado")
-        } catch (e: Exception) { Resource.Error("Erro: ${e.message}") }
+        } catch (e: Exception) { Resource.Error(e.message ?: "Erro") }
     }
 
     suspend fun removeMedicalCondition(userId: String, condition: String): Resource<String> {
         return try {
             val user = userDao.getUserById(userId)
             if (user != null) {
-                val updatedConditions = user.medicalConditions.toMutableList()
-                if (updatedConditions.remove(condition)) {
-                    val updatedUser = user.copy(medicalConditions = updatedConditions, updatedAt = Date())
-                    userDao.updateUser(updatedUser)
+                val trimmed = condition.trim()
+                val updated = user.medicalConditions.toMutableList()
+                // Garantir que a remoção funcione ignorando espaços e letras maiúsculas. Modificado por: Daniel
+                if (updated.removeAll { it.trim().equals(trimmed, ignoreCase = true) }) {
+                    val updatedUser = user.copy(medicalConditions = updated, updatedAt = Date())
+                    userDao.insertUser(updatedUser)
                     syncWithFirebase(convertToUserProfile(updatedUser))
-                    Resource.Success("Condição removida")
-                } else Resource.Error("Não encontrada")
+                    Resource.Success("Removido")
+                } else Resource.Error("Não encontrado")
             } else Resource.Error("Usuário não encontrado")
-        } catch (e: Exception) { Resource.Error("Erro: ${e.message}") }
+        } catch (e: Exception) { Resource.Error(e.message ?: "Erro") }
     }
 
     suspend fun addAllergy(userId: String, allergy: String): Resource<String> {
         return try {
             val user = userDao.getUserById(userId)
             if (user != null) {
-                val updatedAllergies = user.allergies.toMutableList()
-                if (!updatedAllergies.contains(allergy)) {
-                    updatedAllergies.add(allergy)
-                    val updatedUser = user.copy(allergies = updatedAllergies, updatedAt = Date())
-                    userDao.updateUser(updatedUser)
+                val trimmed = allergy.trim()
+                val updated = user.allergies.toMutableList()
+                if (!updated.contains(trimmed)) {
+                    updated.add(trimmed)
+                    val updatedUser = user.copy(allergies = updated, updatedAt = Date())
+                    userDao.insertUser(updatedUser)
                     syncWithFirebase(convertToUserProfile(updatedUser))
-                    Resource.Success("Alergia adicionada")
+                    Resource.Success("Adicionado")
                 } else Resource.Error("Já existe")
             } else Resource.Error("Usuário não encontrado")
-        } catch (e: Exception) { Resource.Error("Erro: ${e.message}") }
+        } catch (e: Exception) { Resource.Error(e.message ?: "Erro") }
     }
 
     suspend fun removeAllergy(userId: String, allergy: String): Resource<String> {
         return try {
             val user = userDao.getUserById(userId)
             if (user != null) {
-                val updatedAllergies = user.allergies.toMutableList()
-                if (updatedAllergies.remove(allergy)) {
-                    val updatedUser = user.copy(allergies = updatedAllergies, updatedAt = Date())
-                    userDao.updateUser(updatedUser)
+                val trimmed = allergy.trim()
+                val updated = user.allergies.toMutableList()
+                if (updated.removeAll { it.trim().equals(trimmed, ignoreCase = true) }) {
+                    val updatedUser = user.copy(allergies = updated, updatedAt = Date())
+                    userDao.insertUser(updatedUser)
                     syncWithFirebase(convertToUserProfile(updatedUser))
-                    Resource.Success("Alergia removida")
-                } else Resource.Error("Não encontrada")
+                    Resource.Success("Removido")
+                } else Resource.Error("Não encontrado")
             } else Resource.Error("Usuário não encontrado")
-        } catch (e: Exception) { Resource.Error("Erro: ${e.message}") }
-    }
-
-    suspend fun addEmergencyContact(contact: EmergencyContact): Resource<String> {
-        return try {
-            emergencyContactDao.insertContact(contact)
-            Resource.Success("Contato adicionado")
-        } catch (e: Exception) { Resource.Error("Erro: ${e.message}") }
-    }
-
-    suspend fun updateEmergencyContact(contact: EmergencyContact): Resource<String> {
-        return try {
-            emergencyContactDao.updateContact(contact)
-            Resource.Success("Contato atualizado")
-        } catch (e: Exception) { Resource.Error("Erro: ${e.message}") }
-    }
-
-    suspend fun removeEmergencyContact(contactId: String): Resource<String> {
-        return try {
-            emergencyContactDao.deactivateContact(contactId)
-            Resource.Success("Contato removido")
-        } catch (e: Exception) { Resource.Error("Erro: ${e.message}") }
-    }
-
-    fun getEmergencyContactsFlow(userId: String): Flow<List<EmergencyContact>> {
-        return emergencyContactDao.getEmergencyContactsFlow(userId)
-    }
-
-    suspend fun exportUserData(userId: String): Resource<String> {
-        return try {
-            val user = userDao.getUserById(userId)
-            val emergencyContacts = emergencyContactDao.getEmergencyContacts(userId)
-            val exportData = mapOf("user" to user, "emergencyContacts" to emergencyContacts, "exportDate" to Date())
-            val jsonData = com.google.gson.Gson().toJson(exportData)
-            Resource.Success(jsonData)
-        } catch (e: Exception) { Resource.Error("Erro ao exportar") }
-    }
-
-    suspend fun calculateProfileCompleteness(userId: String): Resource<Int> {
-        return try {
-            val user = userDao.getUserById(userId)
-            if (user != null) {
-                var c = 0
-                if (user.name.isNotBlank()) c += 10
-                if (user.email.isNotBlank()) c += 10
-                if (user.photoUrl != null) c += 10
-                if (user.birthDate != null) c += 10
-                if (user.gender != null) c += 10
-                if (user.weight != null) c += 10
-                if (user.height != null) c += 10
-                if (user.medicalConditions.isNotEmpty()) c += 10
-                if (user.allergies.isNotEmpty()) c += 10
-                if (user.emergencyContact != null) c += 10
-                Resource.Success(c)
-            } else Resource.Error("Não encontrado")
-        } catch (e: Exception) { Resource.Error("Erro cálculo") }
+        } catch (e: Exception) { Resource.Error(e.message ?: "Erro") }
     }
 
     private fun convertToUserProfile(user: User): UserProfile {
@@ -219,6 +136,7 @@ class UserRepository @Inject constructor(
         val userPrefs = UserPreferences(
             theme = user.theme,
             language = user.language,
+            units = "metric",
             notifications = notifyPrefs,
             privacy = privacySet,
             location = LocationSettings()
@@ -243,6 +161,7 @@ class UserRepository @Inject constructor(
     }
 
     private fun convertToUser(userProfile: UserProfile): User {
+        val prefs = userProfile.preferences ?: UserPreferences()
         return User(
             id = userProfile.id,
             email = userProfile.email,
@@ -254,20 +173,20 @@ class UserRepository @Inject constructor(
             height = userProfile.height,
             medicalConditions = userProfile.medicalConditions.map { it.name },
             allergies = userProfile.allergies.map { it.name },
-            theme = userProfile.preferences.theme,
-            language = userProfile.preferences.language,
+            theme = prefs.theme,
+            language = prefs.language,
             notificationPreferences = mapOf(
-                "weatherAlerts" to userProfile.preferences.notifications.weatherAlerts,
-                "medicationReminders" to userProfile.preferences.notifications.medicationReminders,
-                "healthTips" to userProfile.preferences.notifications.healthTips,
-                "emergencyAlerts" to userProfile.preferences.notifications.emergencyAlerts,
-                "dailyReports" to userProfile.preferences.notifications.dailyReports
+                "weatherAlerts" to prefs.notifications.weatherAlerts,
+                "medicationReminders" to prefs.notifications.medicationReminders,
+                "healthTips" to prefs.notifications.healthTips,
+                "emergencyAlerts" to prefs.notifications.emergencyAlerts,
+                "dailyReports" to prefs.notifications.dailyReports
             ),
             privacySettings = mapOf(
-                "shareLocation" to userProfile.preferences.privacy.shareLocation,
-                "shareHealthData" to userProfile.preferences.privacy.shareHealthData,
-                "analyticsEnabled" to userProfile.preferences.privacy.analyticsEnabled,
-                "crashReportsEnabled" to userProfile.preferences.privacy.crashReportsEnabled
+                "shareLocation" to prefs.privacy.shareLocation,
+                "shareHealthData" to prefs.privacy.shareHealthData,
+                "analyticsEnabled" to prefs.privacy.analyticsEnabled,
+                "crashReportsEnabled" to prefs.privacy.crashReportsEnabled
             ),
             updatedAt = Date()
         )
@@ -281,8 +200,8 @@ class UserRepository @Inject constructor(
     }
 
     private fun calculateBMI(weight: Float, height: Float): Float {
-        val heightInMeters = height / 100
-        return weight / (heightInMeters * heightInMeters)
+        val h = height / 100
+        return weight / (h * h)
     }
 
     private fun isWeatherSensitiveCondition(condition: String): Boolean {
@@ -291,10 +210,11 @@ class UserRepository @Inject constructor(
     }
 
     private fun determineAllergySeason(allergy: String): String? {
+        val a = allergy.lowercase()
         return when {
-            allergy.contains("pólen", ignoreCase = true) || allergy.contains("gramínea", ignoreCase = true) -> "primavera"
-            allergy.contains("ácaro", ignoreCase = true) -> "inverno"
-            allergy.contains("fungo", ignoreCase = true) || allergy.contains("mofo", ignoreCase = true) -> "outono"
+            a.contains("pólen") || a.contains("gramínea") -> "primavera"
+            a.contains("ácaro") -> "inverno"
+            a.contains("fungo") || a.contains("mofo") -> "outono"
             else -> null
         }
     }
@@ -302,4 +222,15 @@ class UserRepository @Inject constructor(
     private fun calculateIsProfileComplete(user: User): Boolean {
         return user.name.isNotBlank() && user.email.isNotBlank() && user.birthDate != null && user.gender != null && (user.medicalConditions.isNotEmpty() || user.allergies.isNotEmpty())
     }
+
+    suspend fun addEmergencyContact(contact: EmergencyContact): Resource<String> {
+        return try { emergencyContactDao.insertContact(contact); Resource.Success("Adicionado") } catch (e: Exception) { Resource.Error(e.message ?: "Erro") }
+    }
+    suspend fun updateEmergencyContact(contact: EmergencyContact): Resource<String> {
+        return try { emergencyContactDao.updateContact(contact); Resource.Success("Atualizado") } catch (e: Exception) { Resource.Error(e.message ?: "Erro") }
+    }
+    suspend fun removeEmergencyContact(contactId: String): Resource<String> {
+        return try { emergencyContactDao.deactivateContact(contactId); Resource.Success("Removido") } catch (e: Exception) { Resource.Error(e.message ?: "Erro") }
+    }
+    fun getEmergencyContactsFlow(userId: String): Flow<List<EmergencyContact>> = emergencyContactDao.getEmergencyContactsFlow(userId)
 }

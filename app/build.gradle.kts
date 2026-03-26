@@ -11,12 +11,12 @@ apply(plugin = "com.google.dagger.hilt.android")
 
 android {
     namespace = "com.climasaude"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.climasaude"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
 
@@ -78,6 +78,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation(libs.androidx.core.splashscreen)
 
     // Lifecycle & ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
