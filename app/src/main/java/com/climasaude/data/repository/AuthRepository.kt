@@ -1,6 +1,7 @@
 package com.climasaude.data.repository
 
 import android.content.Context
+import android.util.Log
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -45,20 +46,16 @@ class AuthRepository @Inject constructor(
         get() = firebaseAuth.currentUser
 
     suspend fun loginWithEmail(email: String, password: String): Resource<UserProfile> {
-        if (BuildConfig.DEBUG && email == "admin@climasaude.com.br" && password == "admin123") {
-            val mockUser = createUserProfile("admin_id", email, "Usuário Administrador")
-            appPreferences.setUserId("admin_id")
-            appPreferences.setUserLoggedIn(true)
-            return Resource.Success(mockUser)
-        }
-
         return try {
             val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
             val user = result.user
 
             if (user != null) {
                 val userProfile = withTimeoutOrNull(5000) { getUserProfile(user.uid) }
-                    ?: createUserProfile(user.uid, user.email ?: "", "Usuário")
+                    ?: createUserProfile(user.uid, user.email ?: email, "Usuário")
+                
+                //  Persistir dados localmente no login. Modificado por: Daniel
+                saveUserToLocal(userProfile)
                 
                 appPreferences.setUserId(user.uid)
                 appPreferences.setUserLoggedIn(true)
@@ -93,12 +90,8 @@ class AuthRepository @Inject constructor(
             if (user != null) {
                 val userProfile = createUserProfile(user.uid, email, name)
                 
-                withTimeoutOrNull(5000) {
-                    saveUserToFirestore(userProfile)
-                }
-                withTimeoutOrNull(3000) {
-                    saveUserToLocal(userProfile)
-                }
+                saveUserToFirestore(userProfile)
+                saveUserToLocal(userProfile)
 
                 appPreferences.setUserId(user.uid)
                 appPreferences.setUserLoggedIn(true)
@@ -125,13 +118,14 @@ class AuthRepository @Inject constructor(
                     userProfile = createUserProfile(
                         user.uid,
                         user.email ?: "",
-                        user.displayName ?: "",
+                        user.displayName ?: "Usuário",
                         user.photoUrl?.toString()
                     )
-                    withTimeoutOrNull(5000) { saveUserToFirestore(userProfile!!) }
+                    saveUserToFirestore(userProfile)
                 }
 
-                saveUserToLocal(userProfile!!)
+                // Garantir persistência local no Google Login. Modificado por: Daniel
+                saveUserToLocal(userProfile)
                 appPreferences.setUserId(user.uid)
                 appPreferences.setUserLoggedIn(true)
 
@@ -174,25 +168,18 @@ class AuthRepository @Inject constructor(
         return try {
             val userId = currentUser?.uid
             if (userId != null) {
-                // Tenta deletar do Firestore com timeout
                 withTimeoutOrNull(5000) {
                     firestore.collection("users").document(userId).delete().await()
                 }
-
-                // Deleta do Banco Local
                 val localUser = userDao.getUserById(userId)
                 if (localUser != null) {
                     userDao.deleteUser(localUser)
                 }
-
-                // Deleta a conta de autenticação
                 currentUser?.delete()?.await()
-
                 appPreferences.clearAll()
-
                 Resource.Success("Conta excluída permanentemente")
             } else {
-                Resource.Error("Usuário não autenticado para exclusão")
+                Resource.Error("Usuário não autenticado")
             }
         } catch (e: Exception) {
             Resource.Error("Falha ao excluir conta: ${e.message}")
@@ -200,20 +187,13 @@ class AuthRepository @Inject constructor(
     }
 
     private suspend fun getUserProfile(userId: String): UserProfile? {
-        if (userId == "admin_id") {
-            return createUserProfile("admin_id", "admin@climasaude.com.br", "Usuário Administrador")
-        }
         return try {
             val doc = firestore.collection("users").document(userId).get().await()
             if (doc.exists()) {
                 doc.toObject(UserProfile::class.java)
-            } else {
-                val localUser = userDao.getUserById(userId)
-                localUser?.let { convertToUserProfile(it) }
-            }
-        } catch (_: Exception) {
-            val localUser = userDao.getUserById(userId)
-            localUser?.let { convertToUserProfile(it) }
+            } else null
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -237,19 +217,29 @@ class AuthRepository @Inject constructor(
     }
 
     private suspend fun saveUserToFirestore(userProfile: UserProfile) {
-        if (userProfile.id == "admin_id") return
         try {
             firestore.collection("users")
                 .document(userProfile.id)
                 .set(userProfile)
                 .await()
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) { }
     }
 
     private suspend fun saveUserToLocal(userProfile: UserProfile) {
-        if (userProfile.id == "admin_id") return
-        val user = convertToUser(userProfile)
+        val user = User(
+            id = userProfile.id,
+            email = userProfile.email,
+            name = userProfile.name,
+            photoUrl = userProfile.photoUrl,
+            birthDate = userProfile.birthDate,
+            gender = userProfile.gender,
+            weight = userProfile.weight,
+            height = userProfile.height,
+            medicalConditions = userProfile.medicalConditions.map { it.name },
+            allergies = userProfile.allergies.map { it.name },
+            theme = userProfile.preferences?.theme ?: "auto",
+            language = userProfile.preferences?.language ?: "pt-BR"
+        )
         userDao.insertUser(user)
     }
 

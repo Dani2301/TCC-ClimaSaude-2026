@@ -1,11 +1,11 @@
 package com.climasaude.presentation.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.climasaude.data.repository.UserRepository
 import com.climasaude.data.repository.AuthRepository
 import com.climasaude.domain.models.UserProfile
-import com.climasaude.data.database.entities.EmergencyContact
 import com.climasaude.data.preferences.AppPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -33,13 +33,21 @@ class ProfileViewModel @Inject constructor(
     private fun observeUserProfile() {
         viewModelScope.launch {
             val userId = getCurrentUserId()
-            if (userId.isEmpty()) return@launch
+            // Log Técnico para Daniel conferir no Logcat do dispositivo físico
+            Log.d("ProfileViewModel", "Observando perfil para o ID: $userId")
+            
+            if (userId.isEmpty()) {
+                Log.e("ProfileViewModel", "ERRO: UserId está vazio! O salvamento não funcionará.")
+                return@launch
+            }
 
             _isLoading.value = true
-            // Senior Fix: Confiar apenas no Flow do Banco de Dados. Modificado por: Daniel
             userRepository.getUserProfileFlow(userId)
                 .onEach { _isLoading.value = false }
-                .catch { _isLoading.value = false }
+                .catch { e -> 
+                    Log.e("ProfileViewModel", "Erro no Flow de perfil: ${e.message}")
+                    _isLoading.value = false 
+                }
                 .collect { profile ->
                     _userProfile.value = profile
                 }
@@ -56,14 +64,15 @@ class ProfileViewModel @Inject constructor(
             height = height
         )
         viewModelScope.launch {
+            Log.d("ProfileViewModel", "Tentando salvar biometria: Peso $weight, Altura $height")
             userRepository.updateUserProfile(updatedProfile)
-            // Não precisa de refresh manual, o observeUserProfile cuidará disso. Modificado por: Daniel
         }
     }
 
     fun addMedicalCondition(condition: String) {
         viewModelScope.launch {
             val userId = getCurrentUserId()
+            Log.d("ProfileViewModel", "Adicionando condição: $condition")
             userRepository.addMedicalCondition(userId, condition)
         }
     }
@@ -71,6 +80,7 @@ class ProfileViewModel @Inject constructor(
     fun removeMedicalCondition(condition: String) {
         viewModelScope.launch {
             val userId = getCurrentUserId()
+            Log.d("ProfileViewModel", "Removendo condição: $condition")
             userRepository.removeMedicalCondition(userId, condition)
         }
     }
@@ -78,6 +88,7 @@ class ProfileViewModel @Inject constructor(
     fun addAllergy(allergy: String) {
         viewModelScope.launch {
             val userId = getCurrentUserId()
+            Log.d("ProfileViewModel", "Adicionando alergia: $allergy")
             userRepository.addAllergy(userId, allergy)
         }
     }
@@ -85,6 +96,7 @@ class ProfileViewModel @Inject constructor(
     fun removeAllergy(allergy: String) {
         viewModelScope.launch {
             val userId = getCurrentUserId()
+            Log.d("ProfileViewModel", "Removendo alergia: $allergy")
             userRepository.removeAllergy(userId, allergy)
         }
     }

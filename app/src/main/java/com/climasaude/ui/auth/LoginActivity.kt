@@ -49,7 +49,7 @@ class LoginActivity : AppCompatActivity() {
             account.idToken?.let { idToken ->
                 authViewModel.loginWithGoogle(idToken)
             } ?: run {
-                binding.root.showSnackbar("Erro: ID Token do Google não encontrado. Verifique a configuração do Firebase.")
+                binding.root.showSnackbar("Erro: ID Token do Google não encontrado.")
             }
         } catch (e: ApiException) {
             binding.root.showSnackbar("Erro no login com Google: ${e.message}")
@@ -70,17 +70,14 @@ class LoginActivity : AppCompatActivity() {
     private fun setupGoogleSignIn() {
         val gsoBuilder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
-        
         if (BuildConfig.GOOGLE_WEB_CLIENT_ID.isNotEmpty()) {
             gsoBuilder.requestIdToken(BuildConfig.GOOGLE_WEB_CLIENT_ID)
         }
-
         googleSignInClient = GoogleSignIn.getClient(this, gsoBuilder.build())
     }
 
     private fun setupBiometricAuth() {
         val executor = ContextCompat.getMainExecutor(this)
-
         biometricPrompt = BiometricPrompt(
             this,
             executor,
@@ -89,103 +86,42 @@ class LoginActivity : AppCompatActivity() {
                     super.onAuthenticationSucceeded(result)
                     navigateToMain()
                 }
-
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
                     binding.root.showSnackbar(errString.toString())
                 }
             }
         )
-
         promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Autenticação Biométrica")
-            .setSubtitle("Use sua impressão digital ou face para fazer login")
+            .setSubtitle("Use sua biometria para entrar")
             .setNegativeButtonText("Cancelar")
             .build()
     }
 
     private fun setupUI() {
-        // Password visibility toggle
         binding.textInputLayoutPassword.setEndIconOnClickListener {
-            val isPasswordVisible = binding.editTextPassword.transformationMethod == HideReturnsTransformationMethod.getInstance()
-
-            if (isPasswordVisible) {
-                binding.editTextPassword.transformationMethod = PasswordTransformationMethod.getInstance()
-                binding.textInputLayoutPassword.setEndIconDrawable(R.drawable.ic_visibility)
-            } else {
-                binding.editTextPassword.transformationMethod = HideReturnsTransformationMethod.getInstance()
-                binding.textInputLayoutPassword.setEndIconDrawable(R.drawable.ic_visibility_off)
-            }
-
+            val isVisible = binding.editTextPassword.transformationMethod == HideReturnsTransformationMethod.getInstance()
+            binding.editTextPassword.transformationMethod = if (isVisible) PasswordTransformationMethod.getInstance() else HideReturnsTransformationMethod.getInstance()
+            binding.textInputLayoutPassword.setEndIconDrawable(if (isVisible) R.drawable.ic_visibility else R.drawable.ic_visibility_off)
             binding.editTextPassword.setSelection(binding.editTextPassword.text?.length ?: 0)
         }
 
-        // Real-time validation
-        binding.editTextEmail.addTextChangedListener { text ->
-            validateEmail(text.toString())
-        }
+        binding.buttonLogin.setOnClickListener { performLogin() }
+        binding.buttonGoogleSignIn.setOnClickListener { signInWithGoogle() }
+        binding.textviewForgotPassword.setOnClickListener { navigateToForgotPassword() }
+        binding.textviewSignUp.setOnClickListener { navigateToRegister() }
+        binding.buttonBiometric.setOnClickListener { biometricPrompt.authenticate(promptInfo) }
 
-        binding.editTextPassword.addTextChangedListener { text ->
-            validatePassword(text.toString())
-        }
-
-        // Click listeners
-        binding.buttonLogin.setOnClickListener {
-            performLogin()
-        }
-
-        binding.buttonGoogleSignIn.setOnClickListener {
-            if (BuildConfig.GOOGLE_WEB_CLIENT_ID.isEmpty()) {
-                binding.root.showSnackbar("Google Sign-In não configurado. Adicione o GOOGLE_WEB_CLIENT_ID no build.gradle.")
-            } else {
-                signInWithGoogle()
-            }
-        }
-
-        binding.textviewForgotPassword.setOnClickListener {
-            navigateToForgotPassword()
-        }
-
-        binding.textviewSignUp.setOnClickListener {
-            navigateToRegister()
-        }
-
-        binding.buttonBiometric.setOnClickListener {
-            authenticateWithBiometric()
-        }
-
-        // Check if biometric is available
         updateBiometricButton()
-    }
-
-    private fun validateEmail(email: String) {
-        if (email.isNotEmpty() && !ValidationUtils.isValidEmail(email)) {
-            binding.textInputLayoutEmail.error = "Email inválido"
-        } else {
-            binding.textInputLayoutEmail.error = null
-        }
-    }
-
-    private fun validatePassword(password: String) {
-        if (password.isNotEmpty() && password.length < 6) {
-            binding.textInputLayoutPassword.error = "Senha deve ter pelo menos 6 caracteres"
-        } else {
-            binding.textInputLayoutPassword.error = null
-        }
     }
 
     private fun updateBiometricButton() {
         val biometricManager = BiometricManager.from(this)
-
-        when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
-            BiometricManager.BIOMETRIC_SUCCESS -> {
-                binding.buttonBiometric.show()
-            }
-            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE,
-            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE,
-            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
-                binding.buttonBiometric.hide()
-            }
+        if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS) {
+            binding.buttonBiometric.show()
+        } else {
+            binding.buttonBiometric.hide()
         }
     }
 
@@ -193,33 +129,14 @@ class LoginActivity : AppCompatActivity() {
         lifecycleScope.launch {
             authViewModel.authState.collect { state ->
                 when (state) {
-                    is AuthState.Authenticated -> {
-                        navigateToMain()
-                    }
-                    is AuthState.Error -> {
-                        binding.root.showSnackbar(state.message)
-                    }
-                    is AuthState.PasswordResetSent -> {
-                        binding.root.showSnackbar("Email de recuperação enviado!")
-                    }
+                    is AuthState.Authenticated -> navigateToMain()
+                    is AuthState.Error -> binding.root.showSnackbar(state.message)
                     else -> {}
                 }
             }
         }
-
         lifecycleScope.launch {
-            authViewModel.isLoading.collect { isLoading ->
-                updateLoadingState(isLoading)
-            }
-        }
-
-        lifecycleScope.launch {
-            authViewModel.errorMessage.collect { error ->
-                error?.let {
-                    binding.root.showSnackbar(it)
-                    authViewModel.clearError()
-                }
-            }
+            authViewModel.isLoading.collect { isLoading -> updateLoadingState(isLoading) }
         }
     }
 
@@ -227,12 +144,10 @@ class LoginActivity : AppCompatActivity() {
         if (isLoading) {
             binding.progressBar.show()
             binding.buttonLogin.isEnabled = false
-            binding.buttonGoogleSignIn.isEnabled = false
             binding.buttonLogin.text = "Entrando..."
         } else {
             binding.progressBar.hide()
             binding.buttonLogin.isEnabled = true
-            binding.buttonGoogleSignIn.isEnabled = true
             binding.buttonLogin.text = "Entrar"
         }
     }
@@ -241,51 +156,22 @@ class LoginActivity : AppCompatActivity() {
         val email = binding.editTextEmail.text.toString().trim()
         val password = binding.editTextPassword.text.toString()
 
-        // Atalho para login de teste: se ambos estiverem vazios, preenche com admin
-        if (email.isEmpty() && password.isEmpty()) {
-            val testEmail = "admin@climasaude.com.br"
-            val testPassword = "admin123"
-            binding.editTextEmail.setText(testEmail)
-            binding.editTextPassword.setText(testPassword)
-            authViewModel.loginWithEmail(testEmail, testPassword)
+        if (email.isEmpty() || password.isEmpty()) {
+            binding.root.showSnackbar("Preencha todos os campos")
             return
         }
 
-        // Clear previous errors
-        binding.textInputLayoutEmail.error = null
-        binding.textInputLayoutPassword.error = null
-
-        // Validate inputs
-        var hasError = false
-
-        if (email.isEmpty()) {
-            binding.textInputLayoutEmail.error = "Email é obrigatório"
-            hasError = true
-        } else if (!ValidationUtils.isValidEmail(email)) {
+        if (!ValidationUtils.isValidEmail(email)) {
             binding.textInputLayoutEmail.error = "Email inválido"
-            hasError = true
+            return
         }
 
-        if (password.isEmpty()) {
-            binding.textInputLayoutPassword.error = "Senha é obrigatória"
-            hasError = true
-        } else if (password.length < 6) {
-            binding.textInputLayoutPassword.error = "Senha deve ter pelo menos 6 caracteres"
-            hasError = true
-        }
-
-        if (!hasError) {
-            authViewModel.loginWithEmail(email, password)
-        }
+        authViewModel.loginWithEmail(email, password)
     }
 
     private fun signInWithGoogle() {
         val signInIntent = googleSignInClient.signInIntent
         googleSignInLauncher.launch(signInIntent)
-    }
-
-    private fun authenticateWithBiometric() {
-        biometricPrompt.authenticate(promptInfo)
     }
 
     private fun navigateToMain() {
@@ -297,35 +183,23 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun navigateToRegister() {
-        val intent = Intent(this, RegisterActivity::class.java)
-        startActivity(intent)
+        startActivity(Intent(this, RegisterActivity::class.java))
     }
 
     private fun navigateToForgotPassword() {
-        val intent = Intent(this, ForgotPasswordActivity::class.java)
-        startActivity(intent)
+        startActivity(Intent(this, ForgotPasswordActivity::class.java))
     }
 
     override fun onStart() {
         super.onStart()
-
-        // Check if user is already signed in with Google
-        val account = GoogleSignIn.getLastSignedInAccount(this)
-        if (account != null) {
-            // User is signed in with Google, authenticate with Firebase
-            account.idToken?.let { idToken ->
-                authViewModel.loginWithGoogle(idToken)
-            }
-        }
+        // Senior Fix: Removido login automático por Google no onStart para evitar logins indesejados. Modificado por: Daniel
     }
 
     override fun onBackPressed() {
         MaterialAlertDialogBuilder(this)
             .setTitle("Sair do App")
-            .setMessage("Deseja sair do ClimaSaude?")
-            .setPositiveButton("Sair") { _, _ ->
-                super.onBackPressed()
-            }
+            .setMessage("Deseja fechar o aplicativo?")
+            .setPositiveButton("Sair") { _, _ -> finish() }
             .setNegativeButton("Cancelar", null)
             .show()
     }
