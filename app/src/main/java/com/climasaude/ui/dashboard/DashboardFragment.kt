@@ -44,7 +44,6 @@ class DashboardFragment : Fragment() {
         observeViewModel()
     }
 
-    // Senior Fix: Sincronizar localização sempre que o usuário voltar para esta tela. Modificado por: Daniel
     override fun onResume() {
         super.onResume()
         viewModel.loadDashboardData()
@@ -55,6 +54,7 @@ class DashboardFragment : Fragment() {
             viewModel.refreshData()
         }
 
+        // Usar NavOptions para garantir fluidez. Modificado por: Daniel
         val navOptions = NavOptions.Builder()
             .setLaunchSingleTop(true)
             .setPopUpTo(R.id.navigation_dashboard, inclusive = false)
@@ -68,12 +68,8 @@ class DashboardFragment : Fragment() {
             findNavController().navigate(R.id.navigation_health, null, navOptions)
         }
 
-        binding.cardViewReports.setOnClickListener {
+        binding.cardReportsShortcut.setOnClickListener {
             findNavController().navigate(R.id.navigation_reports, null, navOptions)
-        }
-
-        binding.cardEmergency.setOnClickListener {
-            findNavController().navigate(R.id.navigation_alerts, null, navOptions)
         }
 
         binding.cardProfilePicture.setOnClickListener {
@@ -117,12 +113,8 @@ class DashboardFragment : Fragment() {
         binding.textviewHumidity.text = getString(R.string.humidity_format, weather.current.humidity)
         binding.textviewWindSpeed.text = getString(R.string.wind_format, weather.current.windSpeed.toInt())
         
-        val iconRes = when {
-            weather.current.condition.contains("Cloud", true) -> R.drawable.ic_weather
-            weather.current.condition.contains("Rain", true) -> R.drawable.ic_weather_alert_moderate
-            else -> R.drawable.ic_weather_sunny
-        }
-        binding.imageviewWeatherIcon.setImageResource(iconRes)
+        //  app:tint=null para PNG colorida. Modificado por: Daniel
+        binding.imageviewWeatherIcon.setImageResource(R.drawable.ic_weather)
     }
 
     private fun updateHealthRiskUI() {

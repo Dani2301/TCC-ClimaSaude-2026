@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:padding="24dp">
 
-        <!-- Logo atualizado para PNG. Senior Fix: scaleType centerInside. Modificado por: Daniel -->
+        <!-- Logo atualizado para PNG. scaleType centerInside. Modificado por: Daniel -->
         <ImageView
             android:id="@+id/imageview_logo"
             android:layout_width="150dp"

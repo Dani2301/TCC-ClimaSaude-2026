@@ -51,14 +51,20 @@ class WeatherViewModel @Inject constructor(
         loadWeatherData()
     }
 
-    fun loadWeatherData(forceRefresh: Boolean = false) {
+    fun loadWeatherData(forceRefresh: Boolean = false, useGPS: Boolean = false) {
         viewModelScope.launch {
             try {
                 _isLoading.value = !forceRefresh
                 _isRefreshing.value = forceRefresh
                 _errorMessage.value = null
 
-                val location = _selectedLocation.value ?: getCurrentLocation()
+                val location = if (useGPS) {
+                    _selectedLocation.value = null // Limpa seleção manual ao forçar GPS
+                    getCurrentLocation()
+                } else {
+                    _selectedLocation.value ?: getCurrentLocation()
+                }
+
                 if (location != null) {
                     loadWeatherForLocation(location.latitude, location.longitude, forceRefresh)
                 } else {
@@ -85,7 +91,15 @@ class WeatherViewModel @Inject constructor(
                     is Resource.Success -> {
                         _currentWeather.value = result.data
                         result.data?.let { weather ->
-                            // Salvar localização pesquisada para sincronizar com o Dashboard. Modificado por: Daniel
+                            _selectedLocation.value = SavedLocation(
+                                id = "searched",
+                                name = weather.location.city,
+                                latitude = weather.location.latitude,
+                                longitude = weather.location.longitude,
+                                city = weather.location.city,
+                                country = weather.location.country,
+                                isDefault = false
+                            )
                             appPreferences.setLastLocation(weather.location.latitude, weather.location.longitude)
                             
                             _riskAnalysis.value = weatherUseCases.analyzeWeatherRisk(weather)
@@ -111,7 +125,6 @@ class WeatherViewModel @Inject constructor(
                 _currentWeather.value = result.data
                 result.data?.let { weather ->
                     _riskAnalysis.value = weatherUseCases.analyzeWeatherRisk(weather)
-                    // Ao carregar com sucesso, atualizamos a última localização conhecida. Modificado por: Daniel
                     appPreferences.setLastLocation(weather.location.latitude, weather.location.longitude)
                 }
             }
@@ -166,7 +179,7 @@ class WeatherViewModel @Inject constructor(
     }
 
     fun refreshWeather() {
-        loadWeatherData(forceRefresh = true)
+        loadWeatherData(forceRefresh = true, useGPS = true)
     }
 
     fun getCurrentWeatherCondition(): WeatherCondition? = _currentWeather.value

@@ -52,7 +52,7 @@
                 android:layout_width="100dp"
                 android:layout_height="100dp"
                 android:src="@drawable/ic_pill"
-                app:tint="?attr/colorOutline" />
+                app:tint="@null" /> <!-- app:tint=null para PNG. Modificado por: Daniel -->
 
             <TextView
                 android:layout_width="wrap_content"
@@ -64,7 +64,6 @@
 
     </LinearLayout>
 
-    <!-- Senior Fix: Botão movido para a esquerda e margem aumentada para 90dp para ficar acima do menu inferior. Modificado por: Daniel -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add_medication"
         android:layout_width="wrap_content"
@@ -76,6 +75,6 @@
         app:elevation="8dp"
         app:backgroundTint="?attr/colorPrimary"
         app:tint="@android:color/white"
-        android:contentDescription="Adicionar Medicamento" />
+        android:contentDescription="Adicionar" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

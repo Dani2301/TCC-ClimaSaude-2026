@@ -192,7 +192,7 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        // Senior Fix: Removido login automático por Google no onStart para evitar logins indesejados. Modificado por: Daniel
+        // Removido login automático por Google no onStart para evitar logins indesejados. Modificado por: Daniel
     }
 
     override fun onBackPressed() {

@@ -6,7 +6,7 @@
     <!-- Navigation -->
     <string name="title_dashboard">Dashboard</string>
     <string name="title_weather">Clima</string>
-    <string name="title_health">Saúde</string>
+    <string name="title_health">Medicamentos</string>
     <string name="title_reports">Relatórios</string>
     <string name="title_alerts">Alertas</string>
     <string name="title_profile">Perfil</string>
