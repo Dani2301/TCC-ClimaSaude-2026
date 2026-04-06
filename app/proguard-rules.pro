@@ -1,4 +1,4 @@
-# Add project specific ProGuard rules here.
+# Regras específicas para evitar crash em aparelhos Samsung/Android 14
 
 # Hilt / Dagger
 -keep public class * extends android.app.Service
@@ -13,7 +13,27 @@
 -keep class dagger.hilt.internal.** { *; }
 -keep class com.climasaude.ClimaSaudeApp_HiltComponents** { *; }
 
-# Google Play Services & Auth - CRITICAL FOR GOOGLE LOGIN
+# Retrofit 2
+-keepattributes Signature, InnerClasses, EnclosingMethod
+-keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
+-keepattributes RuntimeInvisibleAnnotations, RuntimeInvisibleParameterAnnotations
+-keep class retrofit2.** { *; }
+-keep @retrofit2.http.** class * { *; }
+-dontwarn retrofit2.**
+
+# OkHttp3
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class okhttp3.** { *; }
+-dontwarn okhttp3.**
+-dontwarn okio.**
+
+# Gson
+-keep class com.google.gson.** { *; }
+-keep class com.climasaude.data.remote.responses.** { *; }
+-keep class com.climasaude.domain.models.** { *; }
+
+# Google Play Services & Auth
 -keep class com.google.android.gms.auth.api.signin.** { *; }
 -keep class com.google.android.gms.common.api.ApiException { *; }
 -keep class com.google.android.gms.tasks.** { *; }
@@ -29,28 +49,18 @@
 -keep class * extends androidx.room.RoomDatabase
 -dontwarn androidx.room.paging.**
 
-# Retrofit & OkHttp
--keepattributes Signature, InnerClasses, EnclosingMethod
--keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, RuntimeInvisibleAnnotations, RuntimeInvisibleParameterAnnotations
--keepattributes AnnotationDefault
--dontwarn okhint.**
--dontwarn retrofit2.**
--keep class retrofit2.** { *; }
--keep class com.google.gson.** { *; }
--keep class sun.misc.Unsafe { *; }
-
-# Model classes - Prevent Obfuscation
--keep class com.climasaude.domain.models.** { *; }
--keep class com.climasaude.data.database.entities.** { *; }
--keep @androidx.annotation.Keep class * {*;}
--keepclassmembers class * {
-    @androidx.annotation.Keep *;
-}
-
-# WorkManager
+# WorkManager (Crítico para Android 14)
 -keep class * extends androidx.work.Worker
 -keep class * extends androidx.work.ListenableWorker
 -keep class androidx.work.** { *; }
+-keep class com.climasaude.data.receivers.** { *; }
+
+# Prevenir ofuscação de entidades de banco e modelos
+-keep class com.climasaude.data.database.entities.** { *; }
+-keep @androidx.annotation.Keep class * {*;}
+
+# Glide
+-keep class com.github.bumptech.glide.** { *; }
 
 # MPAndroidChart
 -keep class com.github.mikephil.charting.** { *; }
@@ -59,10 +69,4 @@
 # Coroutines
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
 -keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
--keepnames class kotlinx.coroutines.android.AndroidExceptionPreHandler {}
--keepnames class kotlinx.coroutines.android.AndroidDispatcherFactory {}
 -dontwarn kotlinx.coroutines.**
-
-# ViewBinding / DataBinding
--keep class com.climasaude.databinding.** { *; }
--keep class androidx.databinding.** { *; }

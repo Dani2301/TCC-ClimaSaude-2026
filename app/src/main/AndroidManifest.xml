@@ -9,9 +9,10 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
@@ -20,12 +21,6 @@
         <package android:name="com.google.android.gms" />
         <intent>
             <action android:name="com.google.android.gms.auth.api.signin.SERVICE" />
-        </intent>
-        <intent>
-            <action android:name="com.google.android.actions.SEARCH_ACTION" />
-        </intent>
-        <intent>
-            <action android:name="com.google.android.gms.auth.api.signin.DIRECT_BOOT_SERVICE" />
         </intent>
     </queries>
 
@@ -44,7 +39,7 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <!-- Necessário para Hilt + WorkManager não travar no boot. Modificado por: Daniel -->
+        <!-- Desativa o inicializador padrão do WorkManager para usar HiltWorkerFactory -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
@@ -64,10 +59,6 @@
             </intent-filter>
         </receiver>
 
-        <receiver
-            android:name=".utils.MedicationReminderReceiver"
-            android:exported="false" />
-
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="true"
@@ -81,18 +72,15 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="false"
-            android:theme="@style/Theme.ClimaSaude" />
+            android:exported="false" />
 
         <activity
             android:name=".ui.auth.RegisterActivity"
-            android:exported="false"
-            android:theme="@style/Theme.ClimaSaude" />
+            android:exported="false" />
 
         <activity
             android:name=".ui.auth.ForgotPasswordActivity"
-            android:exported="false"
-            android:theme="@style/Theme.ClimaSaude" />
+            android:exported="false" />
     </application>
 
 </manifest>
