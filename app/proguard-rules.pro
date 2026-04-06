@@ -1,6 +1,6 @@
 # Add project specific ProGuard rules here.
 
-# Hilt rules - Comprehensive
+# Hilt / Dagger
 -keep public class * extends android.app.Service
 -keep public class * extends android.app.Application
 -keep public class * extends android.app.Activity
@@ -9,14 +9,23 @@
 -keep class * extends androidx.hilt.work.HiltWorker { *; }
 -keep @dagger.hilt.android.lifecycle.HiltViewModel class * { *; }
 -keep class * extends androidx.lifecycle.ViewModel { *; }
-
-# Dagger / Hilt internals
 -keep class dagger.hilt.android.internal.managers.** { *; }
 -keep class dagger.hilt.internal.** { *; }
 -keep class com.climasaude.ClimaSaudeApp_HiltComponents** { *; }
--keep class com.climasaude.databinding.** { *; }
 
-# Room rules
+# Google Play Services & Auth - CRITICAL FOR GOOGLE LOGIN
+-keep class com.google.android.gms.auth.api.signin.** { *; }
+-keep class com.google.android.gms.common.api.ApiException { *; }
+-keep class com.google.android.gms.tasks.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+
+# Firebase
+-keepattributes SourceFile, LineNumberTable
+-keep public class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+
+# Room Database
 -keep class * extends androidx.room.RoomDatabase
 -dontwarn androidx.room.paging.**
 
@@ -30,25 +39,13 @@
 -keep class com.google.gson.** { *; }
 -keep class sun.misc.Unsafe { *; }
 
-# Firebase
--keepattributes SourceFile, LineNumberTable
--keep public class com.google.firebase.** { *; }
--dontwarn com.google.firebase.**
-
-# Model classes - Garantir que modelos não sejam ofuscados. Modificado por: Daniel
+# Model classes - Prevent Obfuscation
 -keep class com.climasaude.domain.models.** { *; }
 -keep class com.climasaude.data.database.entities.** { *; }
 -keep @androidx.annotation.Keep class * {*;}
 -keepclassmembers class * {
     @androidx.annotation.Keep *;
 }
-
-# Glide
--keep public class * implements com.bumptech.glide.module.GlideModule
--keep public class * extends com.bumptech.glide.module.AppGlideModule
--keep public class * extends com.bumptech.glide.GeneratedAppGlideModule { *; }
--keep public class com.bumptech.glide.GeneratedAppGlideModuleImpl { *; }
--dontwarn com.bumptech.glide.**
 
 # WorkManager
 -keep class * extends androidx.work.Worker
@@ -66,9 +63,6 @@
 -keepnames class kotlinx.coroutines.android.AndroidDispatcherFactory {}
 -dontwarn kotlinx.coroutines.**
 
-# Mantém os nomes dos ViewModels para o Hilt
--keep class * extends androidx.lifecycle.ViewModel { *; }
-
-# Kotlin Reflection (needed by some libraries)
--keep class kotlin.reflect.jvm.internal.** { *; }
--dontwarn kotlin.reflect.jvm.internal.**
+# ViewBinding / DataBinding
+-keep class com.climasaude.databinding.** { *; }
+-keep class androidx.databinding.** { *; }
