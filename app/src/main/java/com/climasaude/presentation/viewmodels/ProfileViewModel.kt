@@ -7,6 +7,7 @@ import com.climasaude.data.repository.UserRepository
 import com.climasaude.data.repository.AuthRepository
 import com.climasaude.domain.models.UserProfile
 import com.climasaude.data.preferences.AppPreferences
+import com.climasaude.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -26,6 +27,9 @@ class ProfileViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _updateResult = MutableSharedFlow<Resource<String>>()
+    val updateResult: SharedFlow<Resource<String>> = _updateResult.asSharedFlow()
+
     init {
         observeUserProfile()
     }
@@ -33,11 +37,10 @@ class ProfileViewModel @Inject constructor(
     private fun observeUserProfile() {
         viewModelScope.launch {
             val userId = getCurrentUserId()
-            // Log Técnico para Daniel conferir no Logcat do dispositivo físico
             Log.d("ProfileViewModel", "Observando perfil para o ID: $userId")
             
             if (userId.isEmpty()) {
-                Log.e("ProfileViewModel", "ERRO: UserId está vazio! O salvamento não funcionará.")
+                Log.e("ProfileViewModel", "ERRO: UserId está vazio!")
                 return@launch
             }
 
@@ -54,6 +57,23 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    // Método atômico para atualizar tudo de uma vez e evitar perda de dados. Modificado por: Daniel
+    fun updateFullHealthProfile(weight: Float?, height: Float?, condition: String?, allergy: String?) {
+        viewModelScope.launch {
+            val userId = getCurrentUserId()
+            _isLoading.value = true
+            val result = userRepository.updateFullHealthProfile(
+                userId = userId,
+                weight = weight,
+                height = height,
+                newCondition = if (condition.isNullOrBlank()) null else condition,
+                newAllergy = if (allergy.isNullOrBlank()) null else allergy
+            )
+            _updateResult.emit(result)
+            _isLoading.value = false
+        }
+    }
+
     fun updatePersonalInfo(name: String, birthDate: Date?, gender: String?, weight: Float?, height: Float?) {
         val currentProfile = _userProfile.value ?: return
         val updatedProfile = currentProfile.copy(
@@ -64,40 +84,31 @@ class ProfileViewModel @Inject constructor(
             height = height
         )
         viewModelScope.launch {
-            Log.d("ProfileViewModel", "Tentando salvar biometria: Peso $weight, Altura $height")
             userRepository.updateUserProfile(updatedProfile)
         }
     }
 
     fun addMedicalCondition(condition: String) {
         viewModelScope.launch {
-            val userId = getCurrentUserId()
-            Log.d("ProfileViewModel", "Adicionando condição: $condition")
-            userRepository.addMedicalCondition(userId, condition)
+            userRepository.addMedicalCondition(getCurrentUserId(), condition)
         }
     }
 
     fun removeMedicalCondition(condition: String) {
         viewModelScope.launch {
-            val userId = getCurrentUserId()
-            Log.d("ProfileViewModel", "Removendo condição: $condition")
-            userRepository.removeMedicalCondition(userId, condition)
+            userRepository.removeMedicalCondition(getCurrentUserId(), condition)
         }
     }
 
     fun addAllergy(allergy: String) {
         viewModelScope.launch {
-            val userId = getCurrentUserId()
-            Log.d("ProfileViewModel", "Adicionando alergia: $allergy")
-            userRepository.addAllergy(userId, allergy)
+            userRepository.addAllergy(getCurrentUserId(), allergy)
         }
     }
 
     fun removeAllergy(allergy: String) {
         viewModelScope.launch {
-            val userId = getCurrentUserId()
-            Log.d("ProfileViewModel", "Removendo alergia: $allergy")
-            userRepository.removeAllergy(userId, allergy)
+            userRepository.removeAllergy(getCurrentUserId(), allergy)
         }
     }
 

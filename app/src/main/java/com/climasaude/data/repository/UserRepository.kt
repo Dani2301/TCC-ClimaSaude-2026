@@ -34,13 +34,54 @@ class UserRepository @Inject constructor(
 
     suspend fun updateUserProfile(userProfile: UserProfile): Resource<String> {
         return try {
-            val user = convertToUser(userProfile)
-            // Usar insertUser (REPLACE) para garantir que peso/altura sejam salvos. Modificado por: Daniel
+            val existingUser = userDao.getUserById(userProfile.id)
+            val user = convertToUser(userProfile).copy(
+                medications = existingUser?.medications ?: emptyList(),
+                emergencyContact = existingUser?.emergencyContact,
+                createdAt = existingUser?.createdAt ?: Date()
+            )
             userDao.insertUser(user)
             syncWithFirebase(userProfile)
             Resource.Success("Perfil atualizado")
         } catch (e: Exception) {
             Resource.Error("Erro ao atualizar: ${e.message}")
+        }
+    }
+
+    // Novo método para atualizar múltiplos dados de saúde de uma vez, evitando race conditions. Modificado por: Daniel
+    suspend fun updateFullHealthProfile(
+        userId: String,
+        weight: Float?,
+        height: Float?,
+        newCondition: String?,
+        newAllergy: String?
+    ): Resource<String> {
+        return try {
+            val user = userDao.getUserById(userId) ?: return Resource.Error("Usuário não encontrado")
+            
+            val updatedConditions = user.medicalConditions.toMutableList()
+            if (!newCondition.isNullOrBlank() && !updatedConditions.contains(newCondition.trim())) {
+                updatedConditions.add(newCondition.trim())
+            }
+
+            val updatedAllergies = user.allergies.toMutableList()
+            if (!newAllergy.isNullOrBlank() && !updatedAllergies.contains(newAllergy.trim())) {
+                updatedAllergies.add(newAllergy.trim())
+            }
+
+            val updatedUser = user.copy(
+                weight = weight,
+                height = height,
+                medicalConditions = updatedConditions,
+                allergies = updatedAllergies,
+                updatedAt = Date()
+            )
+
+            userDao.insertUser(updatedUser)
+            syncWithFirebase(convertToUserProfile(updatedUser))
+            Resource.Success("Perfil de saúde atualizado com sucesso")
+        } catch (e: Exception) {
+            Resource.Error("Erro ao atualizar perfil completo: ${e.message}")
         }
     }
 
@@ -73,7 +114,6 @@ class UserRepository @Inject constructor(
             if (user != null) {
                 val trimmed = condition.trim()
                 val updated = user.medicalConditions.toMutableList()
-                // Garantir que a remoção funcione ignorando espaços e letras maiúsculas. Modificado por: Daniel
                 if (updated.removeAll { it.trim().equals(trimmed, ignoreCase = true) }) {
                     val updatedUser = user.copy(medicalConditions = updated, updatedAt = Date())
                     userDao.insertUser(updatedUser)
@@ -142,6 +182,12 @@ class UserRepository @Inject constructor(
             location = LocationSettings()
         )
 
+        val weight = user.weight
+        val height = user.height
+        val bmi = if (weight != null && weight > 0 && height != null && height > 0) {
+            calculateBMI(weight, height)
+        } else null
+
         return UserProfile(
             id = user.id,
             email = user.email,
@@ -150,9 +196,9 @@ class UserRepository @Inject constructor(
             birthDate = user.birthDate,
             age = user.birthDate?.let { calculateAge(it) },
             gender = user.gender,
-            weight = user.weight,
-            height = user.height,
-            bmi = if (user.weight != null && user.height != null) calculateBMI(user.weight, user.height) else null,
+            weight = weight,
+            height = height,
+            bmi = bmi,
             medicalConditions = user.medicalConditions.map { MedicalCondition(UUID.randomUUID().toString(), it, "moderate", null, isWeatherSensitiveCondition(it)) },
             allergies = user.allergies.map { Allergy(UUID.randomUUID().toString(), it, "moderate", determineAllergySeason(it)) },
             preferences = userPrefs,
@@ -200,8 +246,8 @@ class UserRepository @Inject constructor(
     }
 
     private fun calculateBMI(weight: Float, height: Float): Float {
-        val h = height / 100
-        return weight / (h * h)
+        val hInMeters = height / 100
+        return weight / (hInMeters * hInMeters)
     }
 
     private fun isWeatherSensitiveCondition(condition: String): Boolean {

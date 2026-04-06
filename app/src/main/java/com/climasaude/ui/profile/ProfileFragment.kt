@@ -14,9 +14,11 @@ import com.climasaude.databinding.FragmentProfileBinding
 import com.climasaude.databinding.DialogEditHealthProfileBinding
 import com.climasaude.presentation.viewmodels.ProfileViewModel
 import com.climasaude.domain.models.UserProfile
+import com.climasaude.utils.Resource
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.math.pow
@@ -71,23 +73,18 @@ class ProfileFragment : Fragment() {
         dialogBinding.btnSave.setOnClickListener {
             val weight = dialogBinding.editWeight.text.toString().toFloatOrNull()
             val height = dialogBinding.editHeight.text.toString().toFloatOrNull()
-            val newCondition = dialogBinding.editCondition.text.toString().trim()
-            val newAllergy = dialogBinding.editAllergy.text.toString().trim()
+            val condition = dialogBinding.editCondition.text.toString().trim()
+            val allergy = dialogBinding.editAllergy.text.toString().trim()
 
-            // Salvar Biometria. Modificado por: Daniel
-            viewModel.updatePersonalInfo(
-                name = profile?.name ?: "",
-                birthDate = profile?.birthDate,
-                gender = profile?.gender,
+            // Chamada atômica: salva tudo em uma única transação no repositório. Modificado por: Daniel
+            viewModel.updateFullHealthProfile(
                 weight = weight,
-                height = height
+                height = height,
+                condition = if (condition.isEmpty()) null else condition,
+                allergy = if (allergy.isEmpty()) null else allergy
             )
 
-            if (newCondition.isNotEmpty()) viewModel.addMedicalCondition(newCondition)
-            if (newAllergy.isNotEmpty()) viewModel.addAllergy(newAllergy)
-
             dialog.dismiss()
-            Toast.makeText(requireContext(), "Perfil atualizado!", Toast.LENGTH_SHORT).show()
         }
 
         dialogBinding.btnCancel.setOnClickListener { dialog.dismiss() }
@@ -99,6 +96,23 @@ class ProfileFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.userProfile.collect { profile ->
                     profile?.let { updateUI(it) }
+                }
+            }
+        }
+
+        // Observar resultado do salvamento para dar feedback ao usuário. Modificado por: Daniel
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.updateResult.collectLatest { resource ->
+                    when (resource) {
+                        is Resource.Success -> {
+                            Toast.makeText(requireContext(), resource.data, Toast.LENGTH_SHORT).show()
+                        }
+                        is Resource.Error -> {
+                            Toast.makeText(requireContext(), "Erro: ${resource.message}", Toast.LENGTH_LONG).show()
+                        }
+                        else -> {}
+                    }
                 }
             }
         }
@@ -114,7 +128,6 @@ class ProfileFragment : Fragment() {
         binding.textWeight.text = if (weight > 0) String.format(Locale.getDefault(), "%.1f kg", weight) else "--"
         binding.textHeight.text = if (height > 0) String.format(Locale.getDefault(), "%.0f cm", height) else "--"
         
-        // Exibição de IMC. Modificado por: Daniel
         if (weight > 0 && height > 0) {
             val heightInMeters = height / 100
             val bmi = weight / heightInMeters.pow(2)
@@ -123,7 +136,6 @@ class ProfileFragment : Fragment() {
             binding.textBmi.text = "--"
         }
 
-        // Re-populando Chips com funcionalidade de remoção. Modificado por: Daniel
         binding.chipGroupConditions.removeAllViews()
         profile.medicalConditions.forEach { condition ->
             val chip = Chip(requireContext()).apply {
