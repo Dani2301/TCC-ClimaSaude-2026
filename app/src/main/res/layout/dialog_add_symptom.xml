@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Registrar Sintoma"
+        android:textAppearance="@style/TextAppearance.Material3.TitleLarge" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="Qual o sintoma? (Ex: Dor de cabeça)">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edit_symptom_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textCapSentences" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Intensidade (1 a 10)"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/slider_intensity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:valueFrom="1.0"
+        android:valueTo="10.0"
+        android:stepSize="1.0"
+        app:labelBehavior="visible" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="Observações (opcional)">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edit_notes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:inputType="textMultiLine"
+            android:lines="3" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+</LinearLayout>

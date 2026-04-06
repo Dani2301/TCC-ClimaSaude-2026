@@ -30,6 +30,8 @@
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         app:navGraph="@navigation/mobile_navigation" />
 
+
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
@@ -38,17 +40,5 @@
         android:background="?android:attr/windowBackground"
         app:elevation="8dp"
         app:menu="@menu/bottom_nav_menu" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_emergency"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="80dp"
-        android:backgroundTint="@color/error"
-        android:contentDescription="@string/emergency_button"
-        app:srcCompat="@drawable/ic_emergency"
-        app:tint="@android:color/white" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

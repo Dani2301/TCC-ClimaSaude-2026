@@ -32,9 +32,9 @@ class WeatherFragment : Fragment() {
     ) { permissions ->
         if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
-            viewModel.loadWeatherData(forceRefresh = true)
+            viewModel.refreshWeather()
         } else {
-            Toast.makeText(context, "Permissão de localização negada. O clima não pode ser atualizado.", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Permissão de localização negada.", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -52,12 +52,22 @@ class WeatherFragment : Fragment() {
         
         setupUI()
         observeViewModel()
-        checkLocationPermission()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Garantir que os dados sejam carregados ao voltar para a tela. Modificado por: Daniel
+        viewModel.loadWeatherData()
     }
 
     private fun setupUI() {
         binding.swipeRefresh.setOnRefreshListener {
-            viewModel.loadWeatherData(forceRefresh = true)
+            viewModel.refreshWeather()
+        }
+
+        // Botão de localização atual no ícone do campo de busca. Modificado por: Daniel
+        binding.layoutSearch.setStartIconOnClickListener {
+            checkLocationPermissionAndRefresh()
         }
 
         binding.editSearch.setOnEditorActionListener { v, actionId, _ ->
@@ -80,10 +90,10 @@ class WeatherFragment : Fragment() {
         }
     }
 
-    private fun checkLocationPermission() {
+    private fun checkLocationPermissionAndRefresh() {
         when {
             ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED -> {
-                viewModel.loadWeatherData()
+                viewModel.refreshWeather()
             }
             else -> {
                 requestPermissionLauncher.launch(arrayOf(
@@ -104,7 +114,6 @@ class WeatherFragment : Fragment() {
                     binding.textHumidityVal.text = getString(R.string.humidity_format, it.current.humidity)
                     binding.textWindVal.text = getString(R.string.wind_format, it.current.windSpeed.toInt())
                     
-                    // Definir ícone baseado na condição (simplificado)
                     if (it.current.condition.contains("Cloud", ignoreCase = true)) {
                         binding.imageWeatherLarge.setImageResource(R.drawable.ic_weather)
                     } else if (it.current.condition.contains("Rain", ignoreCase = true)) {

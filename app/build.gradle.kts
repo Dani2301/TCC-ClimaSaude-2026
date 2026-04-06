@@ -98,6 +98,8 @@ dependencies {
     // Dependency Injection (Hilt)
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)
+    implementation("androidx.hilt:hilt-work:1.1.0")
+    kapt("androidx.hilt:hilt-compiler:1.1.0")
 
     // Retrofit para APIs
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

@@ -33,6 +33,10 @@ class HealthRepository @Inject constructor(
         symptomDao.insertSymptom(symptom)
     }
 
+    suspend fun deleteSymptom(symptom: DbSymptom) {
+        symptomDao.deleteSymptom(symptom)
+    }
+
     suspend fun recordSymptom(userId: String, symptom: com.climasaude.domain.models.Symptom): Resource<String> {
         return try {
             val dbSymptom = DbSymptom(
