@@ -107,8 +107,17 @@ class HealthRepository @Inject constructor(
         medicationLogDao.insertLog(log)
     }
 
-    suspend fun exportMedicationsAndSymptoms(userId: String): Resource<File> {
-        return healthXlsxExporter.exportMedicationsAndSymptoms(userId)
+    suspend fun exportMedicationsAndSymptoms(userId: String, targetFile: File): Resource<File> {
+        val user = userDao.getUserById(userId)
+        val medications = medicationDao.getAllMedications(userId)
+        val symptoms = symptomDao.getAllSymptomsSnapshot(userId)
+        
+        return healthXlsxExporter.exportHealthDataTo(
+            targetFile = targetFile,
+            userName = user?.name ?: "Usuário",
+            medications = medications,
+            symptoms = symptoms
+        )
     }
 
     suspend fun getHealthStatistics(userId: String, days: Int): Resource<HealthStatistics> {

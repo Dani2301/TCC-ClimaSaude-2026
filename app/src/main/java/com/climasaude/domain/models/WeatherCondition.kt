@@ -67,7 +67,7 @@ data class WeatherAlert(
 )
 
 data class AirQuality(
-    val index: Int,
+    val index: Double,
     val level: String, // Good, Moderate, Unhealthy, etc.
     val mainPollutant: String,
     val components: Map<String, Double> // PM2.5, PM10, O3, NO2, SO2, CO
@@ -75,7 +75,7 @@ data class AirQuality(
 
 data class UVIndex(
     val current: Double,
-    val max: Double,
+    val max: String,
     val level: String, // Low, Moderate, High, Very High, Extreme
     val recommendation: String
 )
