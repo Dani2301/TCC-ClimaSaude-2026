@@ -146,9 +146,13 @@ class AuthRepository @Inject constructor(
 
     suspend fun resetPassword(email: String): Resource<String> {
         return try {
+            // Adicionado log para debug. Modificado por: Daniel
+            Log.d("AuthRepository", "Solicitando reset de senha para: $email")
             firebaseAuth.sendPasswordResetEmail(email).await()
-            Resource.Success("Email de recuperação enviado com sucesso")
+            Log.d("AuthRepository", "Email de reset enviado com sucesso para: $email")
+            Resource.Success("Email de recuperação enviado! Verifique sua caixa de entrada e spam.")
         } catch (e: Exception) {
+            Log.e("AuthRepository", "Erro ao enviar email de reset", e)
             Resource.Error(mapAuthException(e))
         }
     }

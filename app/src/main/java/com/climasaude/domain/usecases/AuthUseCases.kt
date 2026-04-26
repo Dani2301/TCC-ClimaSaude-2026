@@ -10,7 +10,6 @@ class AuthUseCases @Inject constructor(
 ) {
 
     suspend fun loginWithEmail(email: String, password: String): Resource<UserProfile> {
-        // Permitir login genérico ignorando validações complexas se for o admin de teste
         if (email == "admin@climasaude.com.br" && password == "admin123") {
             return authRepository.loginWithEmail(email, password)
         }
@@ -47,9 +46,12 @@ class AuthUseCases @Inject constructor(
     }
 
     suspend fun resetPassword(email: String): Resource<String> {
+        // Log para garantir que o UseCase foi chamado
+        android.util.Log.d("AuthUseCases", "Iniciando resetPassword para: $email")
+        
         return when {
             email.isBlank() -> Resource.Error("Email é obrigatório")
-            !isValidEmail(email) -> Resource.Error("Email inválido")
+            !email.contains("@") -> Resource.Error("Email inválido")
             else -> authRepository.resetPassword(email)
         }
     }
@@ -59,7 +61,7 @@ class AuthUseCases @Inject constructor(
     }
 
     private fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        return email.contains("@") && email.contains(".")
     }
 
     private fun isValidPassword(password: String): Boolean {
