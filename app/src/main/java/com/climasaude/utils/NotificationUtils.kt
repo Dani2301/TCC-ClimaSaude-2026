@@ -1,16 +1,19 @@
 package com.climasaude.utils
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.media.RingtoneManager
 import android.os.Build
 import android.util.Size
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.appcompat.content.res.AppCompatResources
 import com.climasaude.R
@@ -66,7 +69,7 @@ class NotificationUtils @Inject constructor(
                 NotificationChannel(
                     Constants.EMERGENCY_ALERTS_CHANNEL_ID,
                     "Alertas de Emergência",
-                    NotificationManager.IMPORTANCE_MAX
+                    NotificationManager.IMPORTANCE_HIGH
                 ).apply {
                     description = "Alertas críticos de saúde e emergência"
                     enableVibration(true)
@@ -82,12 +85,25 @@ class NotificationUtils @Inject constructor(
         }
     }
 
+    private fun canSendNotifications(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            notificationManager.areNotificationsEnabled()
+        }
+    }
+
     fun showWeatherAlert(
         title: String,
         message: String,
         severity: String = "medium",
         notificationId: Int = System.currentTimeMillis().toInt()
     ) {
+        if (!canSendNotifications()) return
+
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("navigate_to", "weather")
@@ -125,7 +141,11 @@ class NotificationUtils @Inject constructor(
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
-        notificationManager.notify(notificationId, notification)
+        try {
+            notificationManager.notify(notificationId, notification)
+        } catch (e: SecurityException) {
+            // Log error or handle gracefully
+        }
     }
 
     fun showMedicationReminder(
@@ -136,6 +156,8 @@ class NotificationUtils @Inject constructor(
         logId: String,
         notificationId: Int = System.currentTimeMillis().toInt()
     ) {
+        if (!canSendNotifications()) return
+
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("navigate_to", "health")
@@ -195,7 +217,11 @@ class NotificationUtils @Inject constructor(
             .setDeleteIntent(snoozePendingIntent)
             .build()
 
-        notificationManager.notify(notificationId, notification)
+        try {
+            notificationManager.notify(notificationId, notification)
+        } catch (e: SecurityException) {
+            // Handle gracefully
+        }
     }
 
     fun showHealthTip(
@@ -205,6 +231,8 @@ class NotificationUtils @Inject constructor(
         actionIntent: Intent? = null,
         notificationId: Int = System.currentTimeMillis().toInt()
     ) {
+        if (!canSendNotifications()) return
+
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("navigate_to", "dashboard")
@@ -239,7 +267,11 @@ class NotificationUtils @Inject constructor(
             builder.addAction(R.drawable.ic_action, actionText, actionPendingIntent)
         }
 
-        notificationManager.notify(notificationId, builder.build())
+        try {
+            notificationManager.notify(notificationId, builder.build())
+        } catch (e: SecurityException) {
+            // Handle gracefully
+        }
     }
 
     fun showEmergencyAlert(
@@ -248,6 +280,8 @@ class NotificationUtils @Inject constructor(
         actionText: String = "Ver Detalhes",
         notificationId: Int = System.currentTimeMillis().toInt()
     ) {
+        if (!canSendNotifications()) return
+
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("navigate_to", "emergency")
@@ -278,7 +312,11 @@ class NotificationUtils @Inject constructor(
             .setFullScreenIntent(pendingIntent, true)
             .build()
 
-        notificationManager.notify(notificationId, notification)
+        try {
+            notificationManager.notify(notificationId, notification)
+        } catch (e: SecurityException) {
+            // Handle gracefully
+        }
     }
 
     fun showSyncNotification(
@@ -286,6 +324,8 @@ class NotificationUtils @Inject constructor(
         message: String = "Atualizando informações...",
         notificationId: Int = SYNC_NOTIFICATION_ID
     ) {
+        if (!canSendNotifications()) return
+
         val notification = NotificationCompat.Builder(context, Constants.HEALTH_TIPS_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_sync)
             .setContentTitle(title)
@@ -297,7 +337,11 @@ class NotificationUtils @Inject constructor(
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
-        notificationManager.notify(notificationId, notification)
+        try {
+            notificationManager.notify(notificationId, notification)
+        } catch (e: SecurityException) {
+            // Handle gracefully
+        }
     }
 
     fun hideSyncNotification() {
@@ -333,7 +377,6 @@ class NotificationUtils @Inject constructor(
         val drawable = AppCompatResources.getDrawable(context, drawableResId)
             ?: return BitmapFactory.decodeResource(context.resources, drawableResId)
 
-        // Notification large icons should be bitmaps. This converts vectors safely.
         val size = Size(
             drawable.intrinsicWidth.coerceAtLeast(1),
             drawable.intrinsicHeight.coerceAtLeast(1)
@@ -342,7 +385,6 @@ class NotificationUtils @Inject constructor(
     }
 }
 
-// Broadcast Receiver for medication reminder actions
 class MedicationReminderReceiver : android.content.BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val medicationId = intent.getStringExtra("medication_id")
@@ -350,24 +392,18 @@ class MedicationReminderReceiver : android.content.BroadcastReceiver() {
 
         when (intent.action) {
             "MEDICATION_TAKEN" -> {
-                // Handle medication taken
                 val notificationUtils = NotificationUtils(context)
                 notificationUtils.cancelNotification(medicationId?.toIntOrNull() ?: 0)
 
-                // Log medication taken in database
                 if (medicationId != null && logId != null) {
-                    // In a real implementation, you would inject MedicationLogService here
-                    // For now, we use a simplified approach
                     logMedicationTaken(context, medicationId, logId)
                 }
             }
 
             "MEDICATION_SNOOZE" -> {
-                // Handle snooze (remind in 5 minutes)
                 val notificationUtils = NotificationUtils(context)
                 notificationUtils.cancelNotification(medicationId?.toIntOrNull() ?: 0)
 
-                // Schedule new reminder in 5 minutes
                 if (medicationId != null && logId != null) {
                     scheduleSnoozedReminder(context, medicationId, logId)
                 }
@@ -376,17 +412,12 @@ class MedicationReminderReceiver : android.content.BroadcastReceiver() {
     }
     
     private fun logMedicationTaken(context: Context, medicationId: String, logId: String) {
-        // Create a work request to handle the database operation
-        // This would normally be done through dependency injection
-        // For simplicity, run in a background thread
         java.util.concurrent.Executors.newSingleThreadExecutor().execute {
-            // In a real implementation, access the database through repository
-            // This is a placeholder for the actual implementation
+            // Implementation placeholder
         }
     }
     
     private fun scheduleSnoozedReminder(context: Context, medicationId: String, logId: String) {
-        // Use AlarmManager to schedule a new reminder in 5 minutes
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
         val reminderIntent = android.content.Intent(context, MedicationReminderReceiver::class.java).apply {
             action = "MEDICATION_REMINDER"
@@ -401,11 +432,28 @@ class MedicationReminderReceiver : android.content.BroadcastReceiver() {
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
         
-        val triggerTime = System.currentTimeMillis() + (5 * 60 * 1000) // 5 minutes
-        alarmManager.setExactAndAllowWhileIdle(
-            android.app.AlarmManager.RTC_WAKEUP,
-            triggerTime,
-            pendingIntent
-        )
+        val triggerTime = System.currentTimeMillis() + (5 * 60 * 1000)
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setAndAllowWhileIdle(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
+            }
+        } else {
+            alarmManager.setExactAndAllowWhileIdle(
+                android.app.AlarmManager.RTC_WAKEUP,
+                triggerTime,
+                pendingIntent
+            )
+        }
     }
 }

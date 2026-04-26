@@ -54,7 +54,6 @@ class AuthRepository @Inject constructor(
                 val userProfile = withTimeoutOrNull(5000) { getUserProfile(user.uid) }
                     ?: createUserProfile(user.uid, user.email ?: email, "Usuário")
                 
-                //  Persistir dados localmente no login. Modificado por: Daniel
                 saveUserToLocal(userProfile)
                 
                 appPreferences.setUserId(user.uid)
@@ -69,11 +68,13 @@ class AuthRepository @Inject constructor(
     }
 
     private fun mapAuthException(e: Exception): String {
+        Log.e("AuthRepository", "Auth error: ${e.javaClass.simpleName} - ${e.message}")
         return when (e) {
             is com.google.firebase.auth.FirebaseAuthInvalidUserException -> "Usuário não encontrado ou desativado"
-            is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> "Senha incorreta ou formato de email inválido"
+            is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> "Senha incorreta ou credenciais inválidas"
             is com.google.firebase.auth.FirebaseAuthUserCollisionException -> "Este email já está em uso"
             is com.google.firebase.FirebaseNetworkException -> "Erro de conexão com a internet"
+            is com.google.android.gms.common.api.ApiException -> "Erro de API Google (${e.statusCode}): Verifique as chaves SHA-1"
             else -> e.message ?: "Ocorreu um erro inesperado na autenticação"
         }
     }
@@ -124,7 +125,6 @@ class AuthRepository @Inject constructor(
                     saveUserToFirestore(userProfile)
                 }
 
-                // Garantir persistência local no Google Login. Modificado por: Daniel
                 saveUserToLocal(userProfile)
                 appPreferences.setUserId(user.uid)
                 appPreferences.setUserLoggedIn(true)
@@ -134,6 +134,7 @@ class AuthRepository @Inject constructor(
                 Resource.Error("Falha na autenticação com Google")
             }
         } catch (e: Exception) {
+            Log.e("AuthRepository", "Google sign in error", e)
             Resource.Error(mapAuthException(e))
         }
     }

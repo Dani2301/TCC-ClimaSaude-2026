@@ -115,7 +115,7 @@
                             android:id="@+id/imageview_weather_icon"
                             android:layout_width="64dp"
                             android:layout_height="64dp"
-                            android:src="@drawable/ic_weather" />
+                            android:src="@drawable/ic_weather_sunny" />
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -285,7 +285,7 @@
                         <ImageView
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:src="@drawable/ic_add_symptom"
+                            android:src="@drawable/ic_health"
                             app:tint="?attr/colorPrimary" />
 
                         <TextView
@@ -319,7 +319,7 @@
                         <ImageView
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:src="@drawable/ic_pill"
+                            android:src="@drawable/ic_medication"
                             app:tint="@null" />
 
                         <TextView

@@ -2,26 +2,59 @@ package com.climasaude.data.preferences
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.security.GeneralSecurityException
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class AppPreferences @Inject constructor(@ApplicationContext private val context: Context) {
 
-    private val masterKey = MasterKey.Builder(context)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
+    private val sharedPreferences: SharedPreferences by lazy {
+        createSharedPreferences()
+    }
 
-    private val sharedPreferences: SharedPreferences = EncryptedSharedPreferences.create(
-        context,
-        "clima_saude_prefs",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private fun createSharedPreferences(): SharedPreferences {
+        val fileName = "clima_saude_prefs"
+        return try {
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+
+            EncryptedSharedPreferences.create(
+                context,
+                fileName,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            Log.e("AppPreferences", "Erro ao inicializar EncryptedSharedPreferences, tentando recuperar...", e)
+            
+            // Se falhar (comum em celulares físicos após reinstalação), deletamos o arquivo corrompido e tentamos de novo
+            try {
+                context.deleteSharedPreferences(fileName)
+                val masterKey = MasterKey.Builder(context)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build()
+                
+                EncryptedSharedPreferences.create(
+                    context,
+                    fileName,
+                    masterKey,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                )
+            } catch (e2: Exception) {
+                Log.e("AppPreferences", "Falha crítica na criptografia. Usando SharedPreferences comum.", e2)
+                // Fallback final: SharedPreferences normal para o app não crashar
+                context.getSharedPreferences(fileName, Context.MODE_PRIVATE)
+            }
+        }
+    }
 
     companion object {
         private const val KEY_USER_ID = "user_id"
@@ -41,8 +74,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         private const val KEY_QUIET_HOURS_ENABLED = "quiet_hours_enabled"
         private const val KEY_QUIET_HOURS_START = "quiet_hours_start"
         private const val KEY_QUIET_HOURS_END = "quiet_hours_end"
-        
-        // Chaves para persistência de localização. Modificado por: Daniel
         private const val KEY_LAST_LAT = "last_lat"
         private const val KEY_LAST_LON = "last_lon"
     }
@@ -158,7 +189,7 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
     }
 
     fun getSyncFrequency(): Int {
-        return sharedPreferences.getInt(KEY_SYNC_FREQUENCY, 30) // 30 minutes default
+        return sharedPreferences.getInt(KEY_SYNC_FREQUENCY, 30)
     }
 
     // Weather Settings
@@ -195,7 +226,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         return sharedPreferences.getString(KEY_QUIET_HOURS_END, "07:00") ?: "07:00"
     }
 
-    // Last Searched Location. Modificado por: Daniel
     fun setLastLocation(latitude: Double, longitude: Double) {
         sharedPreferences.edit()
             .putFloat(KEY_LAST_LAT, latitude.toFloat())
@@ -211,12 +241,10 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         return sharedPreferences.getFloat(KEY_LAST_LON, 0f).toDouble()
     }
 
-    // Clear all data
     fun clearAll() {
         sharedPreferences.edit().clear().apply()
     }
 
-    // Clear user-specific data only
     fun clearUserData() {
         sharedPreferences.edit()
             .remove(KEY_USER_ID)

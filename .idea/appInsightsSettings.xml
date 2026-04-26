@@ -6,14 +6,6 @@
         <entry key="Firebase Crashlytics">
           <value>
             <InsightsFilterSettings>
-              <option name="connection">
-                <ConnectionSetting>
-                  <option name="appId" value="com.climasaude" />
-                  <option name="mobileSdkAppId" value="1:823813131612:android:95b42cb26cb93634120599" />
-                  <option name="projectId" value="climasaude-72450" />
-                  <option name="projectNumber" value="823813131612" />
-                </ConnectionSetting>
-              </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
               <option name="timeIntervalDays" value="THIRTY_DAYS" />
               <option name="visibilityType" value="ALL" />

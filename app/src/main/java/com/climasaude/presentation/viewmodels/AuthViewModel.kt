@@ -37,7 +37,7 @@ class AuthViewModel @Inject constructor(
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
 
-    //Usar Channel.BUFFERED para evitar que o .send() suspenda a corrotina. Modificado por: Daniel
+    // Usamos um buffer para garantir que eventos não sejam perdidos durante transições de ciclo de vida.
     private val _eventChannel = Channel<AuthEvent>(Channel.BUFFERED)
     val authEvents = _eventChannel.receiveAsFlow()
 
@@ -51,15 +51,15 @@ class AuthViewModel @Inject constructor(
                         if (user != null) {
                             _userProfile.value = user
                             _authState.value = AuthState.Authenticated(user)
-                            _eventChannel.trySend(AuthEvent.NavigateToMain)
+                            _eventChannel.send(AuthEvent.NavigateToMain)
                         } else {
-                            _eventChannel.trySend(AuthEvent.ShowError("Falha ao autenticar"))
+                            _eventChannel.send(AuthEvent.ShowError("Falha ao autenticar"))
                         }
                     }
                     is Resource.Error -> {
                         val errorMsg = result.message ?: "Erro ao autenticar"
                         _authState.value = AuthState.Error(errorMsg)
-                        _eventChannel.trySend(AuthEvent.ShowError(errorMsg))
+                        _eventChannel.send(AuthEvent.ShowError(errorMsg))
                     }
                     else -> {}
                 }
@@ -85,21 +85,20 @@ class AuthViewModel @Inject constructor(
                         if (user != null) {
                             _userProfile.value = user
                             _authState.value = AuthState.Authenticated(user)
-                            _eventChannel.trySend(AuthEvent.ShowSuccess("Conta criada com sucesso! Redirecionando..."))
-                            _eventChannel.trySend(AuthEvent.NavigateToMain)
+                            _eventChannel.send(AuthEvent.ShowSuccess("Conta criada com sucesso! Redirecionando..."))
+                            _eventChannel.send(AuthEvent.NavigateToMain)
                         }
                     }
                     is Resource.Error -> {
                         val errorMsg = result.message ?: "Erro ao cadastrar"
                         _authState.value = AuthState.Error(errorMsg)
-                        _eventChannel.trySend(AuthEvent.ShowError(errorMsg))
+                        _eventChannel.send(AuthEvent.ShowError(errorMsg))
                     }
                     else -> {}
                 }
             } catch (e: Exception) {
-                _eventChannel.trySend(AuthEvent.ShowError("Erro inesperado no cadastro"))
+                _eventChannel.send(AuthEvent.ShowError("Erro inesperado no cadastro"))
             } finally {
-                // Garantir que o loading sempre seja resetado. Modificado por: Daniel
                 _isLoading.value = false
             }
         }
@@ -115,14 +114,16 @@ class AuthViewModel @Inject constructor(
                         if (user != null) {
                             _userProfile.value = user
                             _authState.value = AuthState.Authenticated(user)
-                            _eventChannel.trySend(AuthEvent.NavigateToMain)
+                            _eventChannel.send(AuthEvent.NavigateToMain)
                         }
                     }
                     is Resource.Error -> {
-                        _eventChannel.trySend(AuthEvent.ShowError(result.message ?: "Erro no login Google"))
+                        _eventChannel.send(AuthEvent.ShowError(result.message ?: "Erro no login Google"))
                     }
                     else -> {}
                 }
+            } catch (e: Exception) {
+                _eventChannel.send(AuthEvent.ShowError("Erro ao processar login Google"))
             } finally {
                 _isLoading.value = false
             }
@@ -135,10 +136,10 @@ class AuthViewModel @Inject constructor(
             try {
                 when (val result = authUseCases.resetPassword(email)) {
                     is Resource.Success -> {
-                        _eventChannel.trySend(AuthEvent.ShowSuccess("Email de recuperação enviado!"))
+                        _eventChannel.send(AuthEvent.ShowSuccess("Email de recuperação enviado!"))
                     }
                     is Resource.Error -> {
-                        _eventChannel.trySend(AuthEvent.ShowError(result.message ?: "Erro ao resetar senha"))
+                        _eventChannel.send(AuthEvent.ShowError(result.message ?: "Erro ao resetar senha"))
                     }
                     else -> {}
                 }
