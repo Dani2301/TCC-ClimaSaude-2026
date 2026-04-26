@@ -53,37 +53,67 @@ class HealthViewModel @Inject constructor(
     private fun loadSymptoms() {
         viewModelScope.launch {
             val userId = appPreferences.getUserId()
-            healthRepository.getAllSymptoms(userId).collect { list ->
-                _symptoms.value = list
-            }
+            val list = healthRepository.getAllSymptoms(userId)
+            _symptoms.value = list
         }
     }
 
-    fun addMedication(name: String, dosage: String, time: String) {
+    fun saveMedication(
+        id: String? = null,
+        name: String,
+        dosage: String,
+        startTime: String,
+        intervalHours: Int
+    ) {
         viewModelScope.launch {
             val userId = appPreferences.getUserId()
-            val medId = UUID.randomUUID().toString()
-            val newMed = Medication(
+            val medId = id ?: UUID.randomUUID().toString()
+            
+            val times = mutableListOf<String>()
+            times.add(startTime)
+            
+            if (intervalHours > 0) {
+                val calendar = Calendar.getInstance()
+                val parts = startTime.split(":")
+                calendar.set(Calendar.HOUR_OF_DAY, parts[0].toInt())
+                calendar.set(Calendar.MINUTE, parts[1].toInt())
+                
+                var nextCal = calendar.clone() as Calendar
+                val timesInADay = 24 / intervalHours
+                for (i in 1 until timesInADay) {
+                    nextCal.add(Calendar.HOUR_OF_DAY, intervalHours)
+                    val timeStr = String.format(Locale.getDefault(), "%02d:%02d", 
+                        nextCal.get(Calendar.HOUR_OF_DAY), nextCal.get(Calendar.MINUTE))
+                    times.add(timeStr)
+                }
+            }
+
+            val medication = Medication(
                 id = medId,
                 userId = userId,
                 name = name,
                 dosage = dosage,
-                frequency = "daily",
-                times = listOf(time),
+                frequency = if (intervalHours > 0) "Interval: ${intervalHours}h" else "Daily",
+                times = times,
                 startDate = Date(),
                 isActive = true,
-                reminderEnabled = true
+                reminderEnabled = true,
+                updatedAt = Date()
             )
-            healthRepository.addMedication(newMed)
             
-            // Agendar lembrete usando AlarmManager (mais preciso que WorkManager para horários fixos). Modificado por: Daniel
-            scheduleAlarm(medId, time)
+            healthRepository.addMedication(medication)
+            cancelAlarms(medId)
             
-            _operationResult.emit(Resource.Success("Medicamento adicionado e lembrete configurado"))
+            times.forEachIndexed { index, time ->
+                scheduleAlarm(medId, time, index)
+            }
+            
+            val msg = if (id == null) "Medicamento adicionado" else "Medicamento atualizado"
+            _operationResult.emit(Resource.Success(msg))
         }
     }
 
-    private fun scheduleAlarm(medicationId: String, timeStr: String) {
+    private fun scheduleAlarm(medicationId: String, timeStr: String, alarmIndex: Int) {
         val parts = timeStr.split(":")
         if (parts.size != 2) return
         
@@ -106,34 +136,39 @@ class HealthViewModel @Inject constructor(
             putExtra("medication_id", medicationId)
         }
         
+        val requestCode = medicationId.hashCode() + alarmIndex
+        
         val pendingIntent = PendingIntent.getBroadcast(
             application,
-            medicationId.hashCode(),
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Android 12+ exige permissão para alarmes exatos. Modificado por: Daniel
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (alarmManager.canScheduleExactAlarms()) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.timeInMillis,
-                    pendingIntent
-                )
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
             } else {
-                alarmManager.setAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.timeInMillis,
-                    pendingIntent
-                )
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
             }
         } else {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                calendar.timeInMillis,
-                pendingIntent
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+        }
+    }
+
+    private fun cancelAlarms(medicationId: String) {
+        val alarmManager = application.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(application, MedicationAlarmReceiver::class.java)
+        
+        for (i in 0 until 6) {
+            val requestCode = medicationId.hashCode() + i
+            val pendingIntent = PendingIntent.getBroadcast(
+                application,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
             )
+            pendingIntent?.let { alarmManager.cancel(it) }
         }
     }
 
@@ -163,18 +198,7 @@ class HealthViewModel @Inject constructor(
     fun deleteMedication(medication: Medication) {
         viewModelScope.launch {
             healthRepository.addMedication(medication.copy(isActive = false))
-            
-            // Cancelar Alarme. Modificado por: Daniel
-            val alarmManager = application.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val intent = Intent(application, MedicationAlarmReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(
-                application,
-                medication.id.hashCode(),
-                intent,
-                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-            )
-            pendingIntent?.let { alarmManager.cancel(it) }
-
+            cancelAlarms(medication.id)
             _operationResult.emit(Resource.Success("Medicamento removido"))
         }
     }

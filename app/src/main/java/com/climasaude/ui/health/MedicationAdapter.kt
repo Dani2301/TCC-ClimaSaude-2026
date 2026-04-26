@@ -9,6 +9,7 @@ import com.climasaude.data.database.entities.Medication
 import com.climasaude.databinding.ItemMedicationBinding
 
 class MedicationAdapter(
+    private val onItemClick: (Medication) -> Unit,
     private val onDeleteClick: (Medication) -> Unit
 ) : ListAdapter<Medication, MedicationAdapter.ViewHolder>(DiffCallback()) {
 
@@ -24,9 +25,19 @@ class MedicationAdapter(
     inner class ViewHolder(private val binding: ItemMedicationBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(medication: Medication) {
             binding.textMedicationName.text = medication.name
-            // Exibir dose e o primeiro horário cadastrado. Modificado por: Daniel
-            val time = medication.times.firstOrNull() ?: "--:--"
-            binding.textMedicationDetails.text = "${medication.dosage} - $time"
+            
+            // Exibir horários formatados
+            val timesInfo = if (medication.times.size > 1) {
+                "${medication.times.size} vezes ao dia (${medication.times.joinToString(", ")})"
+            } else {
+                medication.times.firstOrNull() ?: "--:--"
+            }
+            
+            binding.textMedicationDetails.text = "${medication.dosage} - $timesInfo"
+            
+            binding.root.setOnClickListener {
+                onItemClick(medication)
+            }
             
             binding.btnDeleteMedication.setOnClickListener {
                 onDeleteClick(medication)
