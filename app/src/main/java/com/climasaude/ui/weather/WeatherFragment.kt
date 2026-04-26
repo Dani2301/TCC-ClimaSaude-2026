@@ -16,8 +16,10 @@ import androidx.lifecycle.lifecycleScope
 import com.climasaude.R
 import com.climasaude.databinding.FragmentWeatherBinding
 import com.climasaude.presentation.viewmodels.WeatherViewModel
+import com.climasaude.utils.NotificationUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class WeatherFragment : Fragment() {
@@ -26,6 +28,9 @@ class WeatherFragment : Fragment() {
     private val binding get() = _binding!!
     
     private val viewModel: WeatherViewModel by viewModels()
+
+    @Inject
+    lateinit var notificationUtils: NotificationUtils
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -56,7 +61,6 @@ class WeatherFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // Garantir que os dados sejam carregados ao voltar para a tela. Modificado por: Daniel
         viewModel.loadWeatherData()
     }
 
@@ -65,7 +69,6 @@ class WeatherFragment : Fragment() {
             viewModel.refreshWeather()
         }
 
-        // Botão de localização atual no ícone do campo de busca. Modificado por: Daniel
         binding.layoutSearch.setStartIconOnClickListener {
             checkLocationPermissionAndRefresh()
         }
@@ -88,6 +91,15 @@ class WeatherFragment : Fragment() {
                 viewModel.searchByCity(cityName)
             }
         }
+
+        // Botão de Teste de Alerta
+        binding.buttonTestAlert.setOnClickListener {
+            notificationUtils.showWeatherAlert(
+                "Teste: Alerta Meteorológico",
+                "Condições de calor extremo detectadas (38°C). Mantenha-se hidratado e evite o sol."
+            )
+            Toast.makeText(context, "Notificação de teste disparada!", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun checkLocationPermissionAndRefresh() {
@@ -105,7 +117,7 @@ class WeatherFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.currentWeather.collect { weather ->
                 weather?.let {
                     binding.textCity.text = it.location.city
@@ -125,19 +137,19 @@ class WeatherFragment : Fragment() {
             }
         }
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isLoading.collect { isLoading ->
                 binding.progressLoading.visibility = if (isLoading) View.VISIBLE else View.GONE
             }
         }
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isRefreshing.collect { isRefreshing ->
                 binding.swipeRefresh.isRefreshing = isRefreshing
             }
         }
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.errorMessage.collect { error ->
                 error?.let {
                     Toast.makeText(context, it, Toast.LENGTH_SHORT).show()

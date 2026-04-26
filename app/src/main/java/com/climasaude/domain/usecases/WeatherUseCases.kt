@@ -43,38 +43,68 @@ class WeatherUseCases @Inject constructor(
 
     fun analyzeWeatherRisk(weatherCondition: WeatherCondition): WeatherRiskAnalysis {
         val riskFactors = mutableListOf<RiskFactor>()
+        val recommendations = mutableListOf<String>()
         var overallRisk = RiskLevel.LOW
+        var riskScore = 0.0
 
         val temp = weatherCondition.current.temperature
         val hum = weatherCondition.current.humidity
 
-        if (temp > 35.0 || temp < 0.0) {
-            riskFactors.add(if (temp > 35) RiskFactor.EXTREME_HEAT else RiskFactor.EXTREME_COLD)
+        // Análise de Temperatura
+        if (temp > 35.0) {
+            riskFactors.add(RiskFactor.EXTREME_HEAT)
+            recommendations.add("Calor intenso: Mantenha-se hidratado e evite exposição ao sol entre 10h e 16h.")
             overallRisk = RiskLevel.HIGH
+            riskScore += 40.0
+        } else if (temp < 10.0) {
+            riskFactors.add(RiskFactor.EXTREME_COLD)
+            recommendations.add("Frio intenso: Agasalhe-se bem. Risco aumentado para problemas respiratórios e circulatórios.")
+            overallRisk = maxOfRisk(overallRisk, RiskLevel.MEDIUM)
+            riskScore += 30.0
         }
 
-        if (hum > 80 || hum < 30) {
-            riskFactors.add(if (hum > 80) RiskFactor.HIGH_HUMIDITY else RiskFactor.LOW_HUMIDITY)
-            if (overallRisk == RiskLevel.LOW) overallRisk = RiskLevel.MEDIUM
+        // Análise de Humidade
+        if (hum < 30) {
+            riskFactors.add(RiskFactor.LOW_HUMIDITY)
+            recommendations.add("Umidade muito baixa: Use umidificadores e hidrate as vias nasais.")
+            overallRisk = maxOfRisk(overallRisk, RiskLevel.MEDIUM)
+            riskScore += 20.0
+        } else if (hum > 85) {
+            riskFactors.add(RiskFactor.HIGH_HUMIDITY)
+            recommendations.add("Umidade elevada: Proliferação de fungos e ácaros. Atenção redobrada para asmáticos.")
+            overallRisk = maxOfRisk(overallRisk, RiskLevel.MEDIUM)
+            riskScore += 15.0
         }
 
-        // Senior Fix: Comparação segura de Double. Modificado por: Daniel
+        // Análise de Qualidade do Ar
         weatherCondition.airQuality?.let { air ->
             if (air.index >= 4.0) {
                 riskFactors.add(RiskFactor.POOR_AIR_QUALITY)
-                overallRisk = RiskLevel.HIGH
+                recommendations.add("Qualidade do ar péssima: Evite exercícios ao ar livre. Use máscara se necessário.")
+                overallRisk = RiskLevel.CRITICAL
+                riskScore += 50.0
             } else if (air.index >= 3.0) {
                 riskFactors.add(RiskFactor.MODERATE_AIR_QUALITY)
-                if (overallRisk == RiskLevel.LOW) overallRisk = RiskLevel.MEDIUM
+                recommendations.add("Qualidade do ar moderada: Pessoas sensíveis podem sentir desconforto respiratório.")
+                overallRisk = maxOfRisk(overallRisk, RiskLevel.MEDIUM)
+                riskScore += 25.0
             }
         }
+
+        // Ajuste final do nível de risco baseado no score total
+        if (riskScore >= 70.0) overallRisk = RiskLevel.CRITICAL
+        else if (riskScore >= 40.0) overallRisk = maxOfRisk(overallRisk, RiskLevel.HIGH)
 
         return WeatherRiskAnalysis(
             overallRisk = overallRisk,
             riskFactors = riskFactors,
-            recommendations = emptyList(),
-            riskScore = 0.0
+            recommendations = recommendations,
+            riskScore = riskScore
         )
+    }
+    
+    private fun maxOfRisk(r1: RiskLevel, r2: RiskLevel): RiskLevel {
+        return if (r1.ordinal >= r2.ordinal) r1 else r2
     }
 }
 

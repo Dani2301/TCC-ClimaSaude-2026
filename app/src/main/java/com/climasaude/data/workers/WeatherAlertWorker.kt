@@ -32,7 +32,7 @@ class WeatherAlertWorker @AssistedInject constructor(
                 val weather = weatherResult.data
                 val riskAnalysis = weatherUseCases.analyzeWeatherRisk(weather)
                 
-                // Senior Fix: Sincronizado com a assinatura de NotificationUtils. Modificado por: Daniel
+                // Sincronizado com a assinatura de NotificationUtils. Modificado por: Daniel
                 if (riskAnalysis.overallRisk == RiskLevel.HIGH || riskAnalysis.overallRisk == RiskLevel.CRITICAL) {
                     val message = riskAnalysis.recommendations.firstOrNull() ?: "Condições climáticas extremas detectadas."
                     notificationUtils.showWeatherAlert(

@@ -21,7 +21,6 @@ import com.climasaude.presentation.viewmodels.ReportsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -75,24 +74,24 @@ class ReportsFragment : Fragment() {
 
     private fun openDirectoryPicker() {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val fileName = "Relatorio_Saude_$timestamp.csv" // Mantido CSV para compatibilidade com o writer atual
+        val fileName = "Relatorio_Saude_$timestamp.xlsx"
 
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
-            type = "text/comma-separated-values"
+            // MIME type para Excel
+            type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             putExtra(Intent.EXTRA_TITLE, fileName)
         }
         createDocumentLauncher.launch(intent)
     }
 
     private fun saveFileToUri(uri: Uri) {
-        val tempFile = File(requireContext().cacheDir, "temp_report.csv")
+        val tempFile = File(requireContext().cacheDir, "temp_report.xlsx")
         viewModel.exportHealthReport(tempFile)
         
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { uiState ->
-                    // Só copia se o estado mudar para sucesso e o arquivo for o temporário
                     if (!uiState.isExporting && uiState.exportedFilePath == tempFile.absolutePath) {
                         try {
                             requireContext().contentResolver.openOutputStream(uri)?.use { outputStream ->
@@ -100,7 +99,7 @@ class ReportsFragment : Fragment() {
                                     inputStream.copyTo(outputStream)
                                 }
                             }
-                            // Não removemos o tempFile aqui para permitir o compartilhamento posterior se desejado
+                            Toast.makeText(context, "Relatório exportado com sucesso!", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
                             Toast.makeText(context, "Erro ao salvar arquivo: ${e.message}", Toast.LENGTH_LONG).show()
                         }
@@ -128,7 +127,7 @@ class ReportsFragment : Fragment() {
         try {
             val file = File(filePath)
             if (!file.exists()) {
-                Toast.makeText(requireContext(), "Arquivo temporário não encontrado.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Arquivo não encontrado.", Toast.LENGTH_SHORT).show()
                 return
             }
 
@@ -139,7 +138,8 @@ class ReportsFragment : Fragment() {
             )
 
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/comma-separated-values"
+                // MIME type para Excel
+                type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 putExtra(Intent.EXTRA_STREAM, fileUri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }

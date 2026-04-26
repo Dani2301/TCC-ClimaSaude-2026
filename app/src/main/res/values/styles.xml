@@ -16,7 +16,7 @@
         <item name="colorBackground">@color/background</item>
         <item name="colorOnBackground">@color/on_background</item>
 
-        <!-- Senior Fix: Usar atributos para cores de sistema -->
+        <!-- Usar atributos para cores de sistema -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <item name="android:navigationBarColor">?attr/colorSurface</item>
     </style>

@@ -26,7 +26,7 @@ class WeatherRepository @Inject constructor(
     ): Resource<WeatherCondition> {
         return try {
             val cached = weatherDataDao.getLatestWeatherData(userId)
-            if (!forceRefresh && cached != null && isCacheFresh(cached.timestamp)) {
+            if (!forceRefresh && cached != null && isCacheFresh(cached.timestamp) && latitude == 0.0) {
                 return Resource.Success(convertToWeatherCondition(cached))
             }
 
@@ -44,6 +44,22 @@ class WeatherRepository @Inject constructor(
             val cached = weatherDataDao.getLatestWeatherData(userId)
             cached?.let { Resource.Success(convertToWeatherCondition(it)) } 
                 ?: Resource.Error("Erro: ${e.message}")
+        }
+    }
+
+    suspend fun getWeatherByCity(cityName: String, userId: String = "current_user"): Resource<WeatherCondition> {
+        return try {
+            val response = weatherApiService.getWeatherByCity(cityName)
+            if (response.isSuccessful && response.body() != null) {
+                val data = response.body()!!
+                val weatherCondition = convertToWeatherConditionFromResponse(data)
+                weatherDataDao.insertWeatherData(convertToWeatherData(weatherCondition, userId))
+                Resource.Success(weatherCondition)
+            } else {
+                Resource.Error("Cidade não encontrada ou erro na API")
+            }
+        } catch (e: Exception) {
+            Resource.Error("Erro ao buscar cidade: ${e.message}")
         }
     }
 
@@ -66,7 +82,6 @@ class WeatherRepository @Inject constructor(
                 sunrise = weatherData.sunrise,
                 sunset = weatherData.sunset
             ),
-            // Senior Fix: Todos os parâmetros obrigatórios preenchidos. Modificado por: Daniel
             uv = UVIndex(weatherData.uvIndex, "N/A", "Baixo", "Use protetor"),
             airQuality = AirQuality(weatherData.airQuality.toDouble(), "Bom", "PM2.5", emptyMap()),
             forecast = emptyList(),
@@ -126,7 +141,6 @@ class WeatherRepository @Inject constructor(
         )
     }
 
-    suspend fun getWeatherByCity(c: String): Resource<WeatherCondition> = getCurrentWeather(0.0, 0.0)
     suspend fun getWeatherForecast(la: Double, lo: Double, d: Int): Resource<List<com.climasaude.domain.models.WeatherForecast>> = Resource.Success(emptyList())
     suspend fun getWeatherAlerts(la: Double, lo: Double): Resource<List<com.climasaude.domain.models.WeatherAlert>> = Resource.Success(emptyList())
     suspend fun getWeatherStats(u: String, d: Int): Resource<WeatherStats> = Resource.Success(WeatherStats(0.0, 0, 0))

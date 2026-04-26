@@ -94,7 +94,7 @@ class NotificationUtils @Inject constructor(
         } catch (_: SecurityException) { }
     }
 
-    // Senior Fix: Adicionado logId para sincronizar com o Worker e Receiver. Modificado por: Daniel
+    // Adicionado logId para sincronizar com o Worker e Receiver. Modificado por: Daniel
     fun showMedicationReminder(medicationName: String, dosage: String, time: String, medicationId: String, logId: String) {
         if (!checkPermission()) return
 

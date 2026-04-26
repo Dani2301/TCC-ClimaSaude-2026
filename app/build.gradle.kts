@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.climasaude"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
@@ -126,6 +126,10 @@ dependencies {
 
     // Charts para gráficos
     implementation("com.github.PhilJay:MPAndroidChart:3.1.0")
+
+    // Excel Export (POI)
+    implementation(libs.poi)
+    implementation(libs.poi.ooxml)
 
     // Image Loading
     implementation("com.github.bumptech.glide:glide:4.16.0")

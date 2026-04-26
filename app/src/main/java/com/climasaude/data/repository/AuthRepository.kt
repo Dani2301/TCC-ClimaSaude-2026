@@ -139,6 +139,11 @@ class AuthRepository @Inject constructor(
         }
     }
 
+    suspend fun getCurrentUserProfile(): UserProfile? {
+        val uid = firebaseAuth.currentUser?.uid ?: return null
+        return withTimeoutOrNull(5000) { getUserProfile(uid) }
+    }
+
     suspend fun resetPassword(email: String): Resource<String> {
         return try {
             firebaseAuth.sendPasswordResetEmail(email).await()
@@ -219,11 +224,16 @@ class AuthRepository @Inject constructor(
 
     private suspend fun saveUserToFirestore(userProfile: UserProfile) {
         try {
-            firestore.collection("users")
-                .document(userProfile.id)
-                .set(userProfile)
-                .await()
-        } catch (_: Exception) { }
+            // Adicionado timeout para evitar travamentos em redes instáveis ou primeiro login
+            withTimeoutOrNull(8000) {
+                firestore.collection("users")
+                    .document(userProfile.id)
+                    .set(userProfile)
+                    .await()
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Erro ao salvar perfil no Firestore", e)
+        }
     }
 
     private suspend fun saveUserToLocal(userProfile: UserProfile) {

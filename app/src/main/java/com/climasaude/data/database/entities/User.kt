@@ -5,7 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.Date
 
-// Senior Fix: @Keep impede que o ProGuard renomeie os campos no APK final. Modificado por: Daniel
+// @Keep impede que o ProGuard renomeie os campos no APK final. Modificado por: Daniel
 @Keep
 @Entity(tableName = "users")
 data class User(

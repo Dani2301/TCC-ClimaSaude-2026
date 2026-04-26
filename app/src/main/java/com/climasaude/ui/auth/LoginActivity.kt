@@ -18,6 +18,7 @@ import com.climasaude.MainActivity
 import com.climasaude.databinding.ActivityLoginBinding
 import com.climasaude.presentation.viewmodels.AuthViewModel
 import com.climasaude.presentation.viewmodels.AuthEvent
+import com.climasaude.presentation.viewmodels.AuthState
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
@@ -44,7 +45,6 @@ class LoginActivity : AppCompatActivity() {
                     Toast.makeText(this, "Erro: Token do Google não encontrado", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: ApiException) {
-                // Se o erro for cancelamento pelo usuário, não mostramos Toast longo
                 if (e.statusCode != 12501) {
                     Toast.makeText(this, "Erro no login Google: ${e.message}", Toast.LENGTH_LONG).show()
                 }
@@ -60,6 +60,17 @@ class LoginActivity : AppCompatActivity() {
         setupUI()
         setupObservers()
         setupBackPressed()
+        
+        // Verificação de sessão existente
+        checkExistingSession()
+    }
+
+    private fun checkExistingSession() {
+        val account = GoogleSignIn.getLastSignedInAccount(this)
+        if (account != null && !viewModel.isLoading.value) {
+            // Se já existe conta Google, tentamos validar o estado no ViewModel
+            // O ViewModel deve ser a fonte da verdade
+        }
     }
 
     private fun setupUI() {
@@ -100,8 +111,7 @@ class LoginActivity : AppCompatActivity() {
 
         val googleSignInClient = GoogleSignIn.getClient(this, gso)
         
-        // CORREÇÃO: Fazemos o sign out antes de iniciar para limpar qualquer sessão pendente
-        // que esteja impedindo o fluxo de completar na primeira vez.
+        // Garantimos o signOut para evitar que o Google retorne uma sessão cacheada problemática
         googleSignInClient.signOut().addOnCompleteListener {
             googleSignInLauncher.launch(googleSignInClient.signInIntent)
         }
@@ -130,7 +140,18 @@ class LoginActivity : AppCompatActivity() {
             }
         }
 
-        // Observer para Eventos (Navegação e Erros)
+        // Observer para o Estado de Autenticação (Mais confiável para navegação)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.authState.collect { state ->
+                    if (state is AuthState.Authenticated) {
+                        navigateToMain()
+                    }
+                }
+            }
+        }
+
+        // Observer para Eventos Únicos (Toasts e Erros)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.authEvents.collect { event ->
