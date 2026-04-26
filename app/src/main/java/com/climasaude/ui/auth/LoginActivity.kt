@@ -18,7 +18,6 @@ import com.climasaude.MainActivity
 import com.climasaude.databinding.ActivityLoginBinding
 import com.climasaude.presentation.viewmodels.AuthViewModel
 import com.climasaude.presentation.viewmodels.AuthEvent
-import com.climasaude.presentation.viewmodels.AuthState
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
@@ -45,6 +44,7 @@ class LoginActivity : AppCompatActivity() {
                     Toast.makeText(this, "Erro: Token do Google não encontrado", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: ApiException) {
+                // Se o erro for cancelamento pelo usuário, não mostramos Toast longo
                 if (e.statusCode != 12501) {
                     Toast.makeText(this, "Erro no login Google: ${e.message}", Toast.LENGTH_LONG).show()
                 }
@@ -100,6 +100,8 @@ class LoginActivity : AppCompatActivity() {
 
         val googleSignInClient = GoogleSignIn.getClient(this, gso)
         
+        // CORREÇÃO: Fazemos o sign out antes de iniciar para limpar qualquer sessão pendente
+        // que esteja impedindo o fluxo de completar na primeira vez.
         googleSignInClient.signOut().addOnCompleteListener {
             googleSignInLauncher.launch(googleSignInClient.signInIntent)
         }
@@ -119,7 +121,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setupObservers() {
-        // Observer para Loading. Modificado por: Daniel
+        // Observer para Loading
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.isLoading.collect { isLoading ->
@@ -128,29 +130,20 @@ class LoginActivity : AppCompatActivity() {
             }
         }
 
-        // Observer para Estado de Autenticação (Navegação Robusta). Senior Fix: Modificado por: Daniel
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.authState.collect { state ->
-                    if (state is AuthState.Authenticated) {
-                        navigateToMain()
-                    }
-                }
-            }
-        }
-
-        // Observer para Eventos de Mensagem (Toasts)
+        // Observer para Eventos (Navegação e Erros)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.authEvents.collect { event ->
                     when (event) {
+                        is AuthEvent.NavigateToMain -> {
+                            navigateToMain()
+                        }
                         is AuthEvent.ShowError -> {
                             Toast.makeText(this@LoginActivity, event.message, Toast.LENGTH_LONG).show()
                         }
                         is AuthEvent.ShowSuccess -> {
                             Toast.makeText(this@LoginActivity, event.message, Toast.LENGTH_SHORT).show()
                         }
-                        else -> {}
                     }
                 }
             }
