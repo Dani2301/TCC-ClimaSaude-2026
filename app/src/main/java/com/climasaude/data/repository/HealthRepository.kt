@@ -7,9 +7,11 @@ import com.climasaude.data.database.entities.Symptom as DbSymptom
 import com.climasaude.data.network.HealthApiService
 import com.climasaude.domain.models.*
 import com.climasaude.domain.usecases.*
+import com.climasaude.utils.HealthXlsxExporter
 import com.climasaude.utils.Resource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import java.io.File
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,7 +24,8 @@ class HealthRepository @Inject constructor(
     private val symptomDao: SymptomDao,
     private val userDao: UserDao,
     private val healthApiService: HealthApiService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val healthXlsxExporter: HealthXlsxExporter
 ) {
 
     fun getAllSymptoms(userId: String): Flow<List<DbSymptom>> {
@@ -98,6 +101,10 @@ class HealthRepository @Inject constructor(
 
     suspend fun logMedication(log: MedicationLog) {
         medicationLogDao.insertLog(log)
+    }
+
+    suspend fun exportMedicationsAndSymptoms(userId: String): Resource<File> {
+        return healthXlsxExporter.exportMedicationsAndSymptoms(userId)
     }
 
     suspend fun getHealthStatistics(userId: String, days: Int): Resource<HealthStatistics> {

@@ -136,6 +136,10 @@
     <string name="health_report">Relatório de Saúde</string>
     <string name="weather_report">Relatório Meteorológico</string>
     <string name="correlation_report">Relatório de Correlação</string>
+    <string name="reports_export_description">Exporte seus medicamentos e sintomas em um arquivo XLSX para revisar ou compartilhar.</string>
+    <string name="reports_export_xlsx">Exportar XLSX</string>
+    <string name="reports_status_ready">Pronto para gerar o arquivo XLSX de medicamentos e sintomas.</string>
+    <string name="reports_last_file_label">Último arquivo gerado</string>
 
     <!-- Alerts -->
     <string name="weather_alerts">Alertas Meteorológicos</string>

@@ -9,6 +9,9 @@ import java.util.Date
 @Dao
 interface MedicationDao {
 
+    @Query("SELECT * FROM medications WHERE userId = :userId ORDER BY name ASC")
+    suspend fun getAllMedications(userId: String): List<Medication>
+
     @Query("SELECT * FROM medications WHERE userId = :userId AND isActive = 1 ORDER BY name ASC")
     fun getActiveMedicationsFlow(userId: String): Flow<List<Medication>>
 
