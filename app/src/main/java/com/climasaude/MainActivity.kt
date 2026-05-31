@@ -7,21 +7,28 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.climasaude.databinding.ActivityMainBinding
 import com.climasaude.presentation.viewmodels.DashboardViewModel
 import com.climasaude.presentation.viewmodels.AlertsViewModel
+import com.climasaude.presentation.viewmodels.ProfileViewModel
 import com.climasaude.utils.NotificationUtils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.climasaude.ui.auth.LoginActivity
@@ -38,6 +45,7 @@ class MainActivity : AppCompatActivity() {
 
     private val dashboardViewModel: DashboardViewModel by viewModels()
     private val alertsViewModel: AlertsViewModel by viewModels()
+    private val profileViewModel: ProfileViewModel by viewModels()
 
     @Inject
     lateinit var notificationUtils: NotificationUtils
@@ -51,13 +59,6 @@ class MainActivity : AppCompatActivity() {
         if (locationGranted) {
             dashboardViewModel.refreshData()
         }
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val notificationsGranted = permissions[Manifest.permission.POST_NOTIFICATIONS] == true
-            if (!notificationsGranted) {
-                // Notificações são importantes para os remédios
-            }
-        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,14 +69,24 @@ class MainActivity : AppCompatActivity() {
         setupNavigation()
         setupToolbar()
         setupBottomNavigation()
+        setupDrawer()
         observeViewModels()
         checkPermissions()
         handleIntent(intent)
+        setupBackPress()
     }
 
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-        handleIntent(intent)
+    private fun setupBackPress() {
+        onBackPressedDispatcher.addCallback(this) {
+            if (binding.drawerLayout.isDrawerOpen(GravityCompat.END)) {
+                binding.drawerLayout.closeDrawer(GravityCompat.END)
+            } else {
+                if (!navController.popBackStack()) {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        }
     }
 
     private fun setupNavigation() {
@@ -97,23 +108,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         setupActionBarWithNavController(navController, appBarConfiguration)
-
-        navController.addOnDestinationChangedListener { _, destination, _ ->
-            binding.toolbar.title = when (destination.id) {
-                R.id.navigation_dashboard -> "Dashboard"
-                R.id.navigation_weather -> "Clima"
-                R.id.navigation_health -> "Medicamentos"
-                R.id.navigation_reports -> "Relatórios"
-                R.id.navigation_alerts -> "Alertas"
-                R.id.navigation_profile -> "Perfil"
-                else -> "ClimaSaude"
-            }
-        }
     }
 
     private fun setupBottomNavigation() {
         binding.bottomNavigation.setupWithNavController(navController)
-
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             if (item.itemId == navController.currentDestination?.id) return@setOnItemSelectedListener false
 
@@ -123,28 +121,79 @@ class MainActivity : AppCompatActivity() {
                 .setPopUpTo(navController.graph.findStartDestination().id, inclusive = false, saveState = true)
                 .build()
 
-            if (item.itemId == R.id.navigation_dashboard) {
-                navController.popBackStack(R.id.navigation_dashboard, false)
-            } else {
-                navController.navigate(item.itemId, null, navOptions)
-            }
+            navController.navigate(item.itemId, null, navOptions)
             true
+        }
+    }
+
+    private fun setupDrawer() {
+        binding.navViewRight.setNavigationItemSelectedListener { item ->
+            val handled = when (item.itemId) {
+                R.id.action_logout -> {
+                    showLogoutDialog()
+                    true
+                }
+                else -> NavigationUI.onNavDestinationSelected(item, navController)
+            }
+            if (handled) {
+                binding.drawerLayout.closeDrawer(GravityCompat.END)
+            }
+            handled
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_menu -> {
+                if (binding.drawerLayout.isDrawerOpen(GravityCompat.END)) {
+                    binding.drawerLayout.closeDrawer(GravityCompat.END)
+                } else {
+                    binding.drawerLayout.openDrawer(GravityCompat.END)
+                }
+                true
+            }
+            android.R.id.home -> navController.navigateUp() || super.onOptionsItemSelected(item)
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
     private fun observeViewModels() {
         lifecycleScope.launch {
-            alertsViewModel.unreadCount.collect { count -> updateAlertsBadge(count) }
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                alertsViewModel.unreadCount.collect { count -> updateAlertsBadge(count) }
+            }
         }
 
         lifecycleScope.launch {
-            dashboardViewModel.errorMessage.collect { error ->
-                error?.let {
-                    showError(it)
-                    dashboardViewModel.clearError()
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                dashboardViewModel.errorMessage.collect { error ->
+                    error?.let {
+                        showError(it)
+                        dashboardViewModel.clearError()
+                    }
                 }
             }
         }
+
+        // Observa o perfil do usuário para atualizar o Header do Drawer.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                profileViewModel.userProfile.collect { profile ->
+                    profile?.let { updateNavHeader(it.name, it.email) }
+                }
+            }
+        }
+    }
+
+    private fun updateNavHeader(name: String, email: String) {
+        val headerView = binding.navViewRight.getHeaderView(0)
+        headerView.findViewById<TextView>(R.id.text_nav_name).text = name
+        headerView.findViewById<TextView>(R.id.text_nav_email).text = email
     }
 
     private fun updateAlertsBadge(count: Int) {
@@ -155,83 +204,55 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkPermissions() {
         val permissionsNeeded = mutableListOf<String>()
-        
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             permissionsNeeded.add(Manifest.permission.ACCESS_FINE_LOCATION)
-            permissionsNeeded.add(Manifest.permission.ACCESS_COARSE_LOCATION)
         }
-        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
-        
         if (permissionsNeeded.isNotEmpty()) {
             permissionLauncher.launch(permissionsNeeded.toTypedArray())
         }
     }
 
     private fun handleIntent(intent: Intent?) {
-        intent?.let {
-            val destination = when (it.getStringExtra("navigate_to")) {
+        intent?.getStringExtra("navigate_to")?.let { target ->
+            val destination = when (target) {
                 "weather" -> R.id.navigation_weather
                 "health" -> R.id.navigation_health
-                "dashboard" -> R.id.navigation_dashboard
                 else -> null
             }
-            destination?.let { id ->
-                navController.navigate(id, null, NavOptions.Builder().setPopUpTo(R.id.navigation_dashboard, false).build())
-            }
-        }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_logout -> {
-                showLogoutDialog()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
+            destination?.let { navController.navigate(it) }
         }
     }
 
     private fun showLogoutDialog() {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Sair")
+            .setTitle(R.string.logout)
             .setMessage("Deseja sair da conta?")
-            .setPositiveButton("Sair") { _, _ -> logout() }
-            .setNegativeButton("Cancelar", null)
+            .setPositiveButton(R.string.logout) { _, _ -> logout() }
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
     private fun logout() {
         notificationUtils.cancelAllNotifications()
-        val loginIntent = Intent(this, LoginActivity::class.java).apply {
+        profileViewModel.logout()
+        startActivity(Intent(this, LoginActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        startActivity(loginIntent)
+        })
         finish()
     }
 
     private fun showError(message: String) {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Erro")
+            .setTitle(R.string.error)
             .setMessage(message)
-            .setPositiveButton("OK", null)
+            .setPositiveButton(R.string.ok, null)
             .show()
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        return navController.navigateUp() || super.onSupportNavigateUp()
-    }
-
-    @Suppress("DEPRECATION")
-    override fun onBackPressed() {
-        if (navController.currentDestination?.id != R.id.navigation_dashboard) {
-            navController.popBackStack(R.id.navigation_dashboard, false)
-        } else {
-            super.onBackPressed()
-        }
-    }
+    override fun onSupportNavigateUp(): Boolean = navController.navigateUp() || super.onSupportNavigateUp()
 }

@@ -27,4 +27,7 @@ interface MedicationLogDao {
 
     @Query("UPDATE medication_logs SET scheduledTime = :newTime, snoozedCount = snoozedCount + 1 WHERE id = :logId")
     suspend fun snoozeLog(logId: String, newTime: Date)
+
+    @Query("DELETE FROM medication_logs WHERE userId = :userId")
+    suspend fun clearAllLogs(userId: String)
 }

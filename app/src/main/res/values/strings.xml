@@ -32,6 +32,7 @@
     <string name="hint_birth_date">Data de Nascimento</string>
     <string name="hint_weight">Peso (kg)</string>
     <string name="hint_height">Altura (cm)</string>
+    <string name="hint_search_city">Buscar cidade</string>
 
     <!-- Validation Messages -->
     <string name="error_email_required">Email é obrigatório</string>
@@ -71,6 +72,7 @@
     <!-- Weather -->
     <string name="temperature">Temperatura</string>
     <string name="humidity">Umidade</string>
+    <string name="wind">Vento</string>
     <string name="wind_speed">Velocidade do Vento</string>
     <string name="pressure">Pressão</string>
     <string name="uv_index">Índice UV</string>
@@ -84,6 +86,7 @@
     <string name="temp_format">%1$d°C</string>
     <string name="humidity_format">%1$d%%</string>
     <string name="wind_format">%1$d km/h</string>
+    <string name="test_weather_alert">Testar Alerta de Clima</string>
 
     <!-- Health -->
     <string name="symptoms">Sintomas</string>
@@ -105,6 +108,11 @@
     <string name="take_medication">Tomar Medicamento</string>
     <string name="skip_dose">Pular Dose</string>
     <string name="snooze">Adiar</string>
+    <string name="register">Registrar</string>
+    <string name="empty_medications">Nenhum medicamento cadastrado</string>
+    <string name="empty_symptoms">Nenhum sintoma registrado recentemente</string>
+    <string name="my_medications">Meus Medicamentos</string>
+    <string name="symptom_registration">Registro de Sintomas</string>
 
     <!-- Frequencies -->
     <string name="daily">Diário</string>
@@ -140,6 +148,13 @@
     <string name="reports_export_xlsx">Exportar XLSX</string>
     <string name="reports_status_ready">Pronto para gerar o arquivo XLSX de medicamentos e sintomas.</string>
     <string name="reports_last_file_label">Último arquivo gerado</string>
+    <string name="health_history_title">Histórico Cronológico</string>
+    <string name="empty_history_message">Nenhum registro encontrado</string>
+    <string name="intensity_format">Intensidade: %1$d/10</string>
+    <string name="medication_label">Remédio: %1$s</string>
+    <string name="taken_at_format">Tomado às %1$s</string>
+    <string name="taken_status">Tomado</string>
+    <string name="pending_status">Pendente</string>
 
     <!-- Alerts -->
     <string name="weather_alerts">Alertas Meteorológicos</string>

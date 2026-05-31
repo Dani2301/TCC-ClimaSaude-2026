@@ -21,4 +21,7 @@ interface SymptomDao {
 
     @Delete
     suspend fun deleteSymptom(symptom: Symptom)
+
+    @Query("DELETE FROM symptoms WHERE userId = :userId")
+    suspend fun clearAllSymptoms(userId: String)
 }

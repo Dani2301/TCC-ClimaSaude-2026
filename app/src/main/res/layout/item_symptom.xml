@@ -10,34 +10,30 @@
     app:strokeWidth="1dp"
     app:strokeColor="?attr/colorOutlineVariant">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:padding="16dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/text_symptom_name"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            app:layout_constraintEnd_toStartOf="@+id/btn_delete_symptom"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Dor de Cabeça" />
 
-            <TextView
-                android:id="@+id/text_symptom_name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                tools:text="Dor de Cabeça" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_intensity"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:chipMinTouchTargetSize="0dp"
-                tools:text="Intensidade: 7" />
-
-        </LinearLayout>
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_intensity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            app:chipMinTouchTargetSize="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/text_symptom_name"
+            tools:text="Intensidade: 7" />
 
         <TextView
             android:id="@+id/text_timestamp"
@@ -46,17 +42,33 @@
             android:layout_marginTop="4dp"
             android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
             android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/chip_intensity"
             tools:text="Hoje às 14:30" />
 
         <TextView
             android:id="@+id/text_notes"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
             android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/text_timestamp"
             tools:text="Sentindo uma pressão na testa..."
             tools:visibility="visible" />
 
-    </LinearLayout>
+        <ImageButton
+            android:id="@+id/btn_delete_symptom"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Excluir"
+            android:src="@drawable/ic_emergency"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="?attr/colorError" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

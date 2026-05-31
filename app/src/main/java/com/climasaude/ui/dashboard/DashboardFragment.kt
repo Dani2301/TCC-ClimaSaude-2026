@@ -54,10 +54,10 @@ class DashboardFragment : Fragment() {
             viewModel.refreshData()
         }
 
-        // Usar NavOptions para garantir fluidez. Modificado por: Daniel
         val navOptions = NavOptions.Builder()
             .setLaunchSingleTop(true)
-            .setPopUpTo(R.id.navigation_dashboard, inclusive = false)
+            .setRestoreState(true)
+            .setPopUpTo(R.id.navigation_dashboard, inclusive = false, saveState = true)
             .build()
 
         binding.cardAddSymptom.setOnClickListener {
@@ -85,7 +85,7 @@ class DashboardFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.dashboardState.collect { state ->
                 when (state) {
-                    is DashboardState.Loading -> { }
+                    is DashboardState.Loading -> { /* Shimmer ou Loading poderia ser adicionado aqui */ }
                     is DashboardState.Success -> {
                         updateWeatherUI()
                         updateHealthRiskUI()
@@ -113,21 +113,20 @@ class DashboardFragment : Fragment() {
         binding.textviewHumidity.text = getString(R.string.humidity_format, weather.current.humidity)
         binding.textviewWindSpeed.text = getString(R.string.wind_format, weather.current.windSpeed.toInt())
         
-        //  app:tint=null para PNG colorida. Modificado por: Daniel
         binding.imageviewWeatherIcon.setImageResource(R.drawable.ic_weather)
     }
 
     private fun updateHealthRiskUI() {
         val risk = viewModel.healthRiskAssessment.value ?: return
         
-        val (label, colorRes, strokeColor) = when(risk.overallRisk) {
-            HealthRiskLevel.LOW -> Triple("Baixo", android.R.color.holo_green_dark, android.R.color.transparent)
-            HealthRiskLevel.MEDIUM -> Triple("Médio", android.R.color.holo_orange_light, android.R.color.transparent)
-            HealthRiskLevel.HIGH -> Triple("Alto!", android.R.color.holo_red_light, android.R.color.holo_red_dark)
-            HealthRiskLevel.CRITICAL -> Triple("CRÍTICO", android.R.color.holo_red_dark, android.R.color.black)
+        val (labelRes, colorRes, strokeColor) = when(risk.overallRisk) {
+            HealthRiskLevel.LOW -> Triple(R.string.risk_low, android.R.color.holo_green_dark, android.R.color.transparent)
+            HealthRiskLevel.MEDIUM -> Triple(R.string.risk_medium, android.R.color.holo_orange_light, android.R.color.transparent)
+            HealthRiskLevel.HIGH -> Triple(R.string.risk_high, android.R.color.holo_red_light, android.R.color.holo_red_dark)
+            HealthRiskLevel.CRITICAL -> Triple(R.string.risk_critical, android.R.color.holo_red_dark, android.R.color.black)
         }
 
-        binding.chipRiskLevel.text = label
+        binding.chipRiskLevel.text = getString(labelRes)
         binding.chipRiskLevel.setChipBackgroundColorResource(colorRes)
         
         if (risk.overallRisk >= HealthRiskLevel.HIGH) {

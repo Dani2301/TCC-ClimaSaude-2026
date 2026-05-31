@@ -13,6 +13,7 @@ import com.climasaude.data.database.entities.Symptom as DbSymptom
 import com.climasaude.data.repository.HealthRepository
 import com.climasaude.data.preferences.AppPreferences
 import com.climasaude.data.receivers.MedicationAlarmReceiver
+import com.climasaude.utils.DateUtils
 import com.climasaude.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -53,8 +54,11 @@ class HealthViewModel @Inject constructor(
     private fun loadSymptoms() {
         viewModelScope.launch {
             val userId = appPreferences.getUserId()
-            val list = healthRepository.getAllSymptoms(userId)
-            _symptoms.value = list
+            healthRepository.getAllSymptomsFlow(userId).collect { list ->
+                val startOfToday = DateUtils.getStartOfDay()
+                // Mostrar apenas os sintomas registrados hoje
+                _symptoms.value = list.filter { it.timestamp >= startOfToday }
+            }
         }
     }
 

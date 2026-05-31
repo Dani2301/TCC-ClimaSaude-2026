@@ -10,6 +10,7 @@ import com.climasaude.data.database.entities.MedicationLog
 import com.climasaude.domain.models.*
 import com.climasaude.utils.HealthXlsxExporter
 import com.climasaude.utils.Resource
+import kotlinx.coroutines.flow.Flow
 import java.io.File
 import java.util.Date
 import javax.inject.Inject
@@ -24,6 +25,10 @@ class HealthRepository @Inject constructor(
     private val healthXlsxExporter: HealthXlsxExporter
 ) {
     fun getActiveMedications(userId: String) = medicationDao.getActiveMedicationsFlow(userId)
+
+    fun getAllSymptomsFlow(userId: String): Flow<List<Symptom>> = symptomDao.getAllSymptoms(userId)
+
+    fun getAllMedicationLogsFlow(userId: String): Flow<List<MedicationLog>> = medicationLogDao.getAllLogs(userId)
 
     suspend fun getAllSymptoms(userId: String) = symptomDao.getAllSymptomsSnapshot(userId)
 
@@ -43,13 +48,17 @@ class HealthRepository @Inject constructor(
         medicationLogDao.insertLog(log)
     }
 
+    suspend fun clearHealthHistory(userId: String) {
+        symptomDao.clearAllSymptoms(userId)
+        medicationLogDao.clearAllLogs(userId)
+    }
+
     suspend fun getUserHealthProfile(userId: String): UserProfile {
         val user = userDao.getUserById(userId)
         return UserProfile(
             id = userId,
             name = user?.name ?: "",
             email = user?.email ?: ""
-            // Aqui você mapearia outras propriedades se o seu banco de dados as tivesse
         )
     }
 

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.climasaude.data.repository.UserRepository
 import com.climasaude.data.repository.AuthRepository
 import com.climasaude.domain.models.UserProfile
+import com.climasaude.data.database.entities.EmergencyContact
 import com.climasaude.data.preferences.AppPreferences
 import com.climasaude.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,6 +25,9 @@ class ProfileViewModel @Inject constructor(
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
 
+    private val _emergencyContacts = MutableStateFlow<List<EmergencyContact>>(emptyList())
+    val emergencyContacts: StateFlow<List<EmergencyContact>> = _emergencyContacts.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -32,17 +36,13 @@ class ProfileViewModel @Inject constructor(
 
     init {
         observeUserProfile()
+        observeEmergencyContacts()
     }
 
     private fun observeUserProfile() {
         viewModelScope.launch {
             val userId = getCurrentUserId()
-            Log.d("ProfileViewModel", "Observando perfil para o ID: $userId")
-            
-            if (userId.isEmpty()) {
-                Log.e("ProfileViewModel", "ERRO: UserId está vazio!")
-                return@launch
-            }
+            if (userId.isEmpty()) return@launch
 
             _isLoading.value = true
             userRepository.getUserProfileFlow(userId)
@@ -57,7 +57,32 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    // Método atômico para atualizar tudo de uma vez e evitar perda de dados. Modificado por: Daniel
+    private fun observeEmergencyContacts() {
+        viewModelScope.launch {
+            val userId = getCurrentUserId()
+            if (userId.isEmpty()) return@launch
+
+            userRepository.getEmergencyContactsFlow(userId).collect { contacts ->
+                _emergencyContacts.value = contacts
+            }
+        }
+    }
+
+    fun addEmergencyContact(name: String, phone: String, relationship: String) {
+        viewModelScope.launch {
+            val userId = getCurrentUserId()
+            val contact = EmergencyContact(
+                id = UUID.randomUUID().toString(),
+                userId = userId,
+                name = name,
+                phone = phone,
+                relationship = relationship
+            )
+            val result = userRepository.addEmergencyContact(contact)
+            _updateResult.emit(result)
+        }
+    }
+
     fun updateFullHealthProfile(weight: Float?, height: Float?, condition: String?, allergy: String?) {
         viewModelScope.launch {
             val userId = getCurrentUserId()
@@ -74,35 +99,16 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun updatePersonalInfo(name: String, birthDate: Date?, gender: String?, weight: Float?, height: Float?) {
-        val currentProfile = _userProfile.value ?: return
-        val updatedProfile = currentProfile.copy(
-            name = name,
-            birthDate = birthDate,
-            gender = gender,
-            weight = weight,
-            height = height
-        )
+    fun removeEmergencyContact(contactId: String) {
         viewModelScope.launch {
-            userRepository.updateUserProfile(updatedProfile)
-        }
-    }
-
-    fun addMedicalCondition(condition: String) {
-        viewModelScope.launch {
-            userRepository.addMedicalCondition(getCurrentUserId(), condition)
+            val result = userRepository.removeEmergencyContact(contactId)
+            _updateResult.emit(result)
         }
     }
 
     fun removeMedicalCondition(condition: String) {
         viewModelScope.launch {
             userRepository.removeMedicalCondition(getCurrentUserId(), condition)
-        }
-    }
-
-    fun addAllergy(allergy: String) {
-        viewModelScope.launch {
-            userRepository.addAllergy(getCurrentUserId(), allergy)
         }
     }
 

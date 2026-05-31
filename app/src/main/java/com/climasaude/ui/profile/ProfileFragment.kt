@@ -1,19 +1,32 @@
 package com.climasaude.ui.profile
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.climasaude.R
+import com.climasaude.data.database.entities.EmergencyContact
 import com.climasaude.databinding.FragmentProfileBinding
 import com.climasaude.databinding.DialogEditHealthProfileBinding
 import com.climasaude.presentation.viewmodels.ProfileViewModel
 import com.climasaude.domain.models.UserProfile
+import com.climasaude.ui.emergency.EmergencyContactAdapter
 import com.climasaude.utils.Resource
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -30,6 +43,23 @@ class ProfileFragment : Fragment() {
     private val binding get() = _binding!!
     
     private val viewModel: ProfileViewModel by viewModels()
+    private lateinit var contactAdapter: EmergencyContactAdapter
+
+    private val pickContactLauncher = registerForActivityResult(ActivityResultContracts.PickContact()) { contactUri ->
+        contactUri?.let { uri ->
+            retrieveContactDetails(uri)
+        }
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            pickContactLauncher.launch(null)
+        } else {
+            Toast.makeText(requireContext(), "Permissão para ler contatos é necessária", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,8 +72,20 @@ class ProfileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupEmergencyRecyclerView()
         setupClickListeners()
         observeViewModel()
+    }
+
+    private fun setupEmergencyRecyclerView() {
+        contactAdapter = EmergencyContactAdapter(
+            onCallClick = { contact -> makePhoneCall(contact.phone) },
+            onDeleteClick = { contact -> showDeleteContactConfirmation(contact) }
+        )
+        binding.recyclerProfileEmergencyContacts.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = contactAdapter
+        }
     }
 
     private fun setupClickListeners() {
@@ -55,6 +97,82 @@ class ProfileFragment : Fragment() {
         binding.buttonEditProfile.setOnClickListener {
             showEditHealthDialog()
         }
+
+        binding.buttonAddEmergencyContact.setOnClickListener {
+            checkPermissionAndPickContact()
+        }
+    }
+
+    private fun checkPermissionAndPickContact() {
+        when {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.READ_CONTACTS
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                pickContactLauncher.launch(null)
+            }
+            else -> {
+                requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+            }
+        }
+    }
+
+    private fun retrieveContactDetails(contactUri: Uri) {
+        val cursor = requireContext().contentResolver.query(contactUri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val idIndex = it.getColumnIndex(ContactsContract.Contacts._ID)
+                val nameIndex = it.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
+                
+                val contactId = it.getString(idIndex)
+                val contactName = it.getString(nameIndex)
+
+                val hasPhoneNumberIndex = it.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)
+                val hasPhoneNumber = it.getString(hasPhoneNumberIndex).toInt()
+
+                if (hasPhoneNumber > 0) {
+                    val phoneCursor = requireContext().contentResolver.query(
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                        null,
+                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                        arrayOf(contactId),
+                        null
+                    )
+                    phoneCursor?.use { pCursor ->
+                        if (pCursor.moveToFirst()) {
+                            val phoneIndex = pCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                            val phoneNumber = pCursor.getString(phoneIndex)
+                            
+                            viewModel.addEmergencyContact(contactName, phoneNumber, "Agenda")
+                        }
+                    }
+                } else {
+                    Toast.makeText(requireContext(), "Este contato não possui número de telefone", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun makePhoneCall(phoneNumber: String) {
+        try {
+            val intent = Intent(Intent.ACTION_DIAL).apply {
+                data = Uri.parse("tel:$phoneNumber")
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Não foi possível abrir o discador", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showDeleteContactConfirmation(contact: EmergencyContact) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Remover Contato")
+            .setMessage("Deseja remover ${contact.name}?")
+            .setPositiveButton("Remover") { _, _ ->
+                viewModel.removeEmergencyContact(contact.id)
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun showEditHealthDialog() {
@@ -76,7 +194,6 @@ class ProfileFragment : Fragment() {
             val condition = dialogBinding.editCondition.text.toString().trim()
             val allergy = dialogBinding.editAllergy.text.toString().trim()
 
-            // Chamada atômica: salva tudo em uma única transação no repositório. Modificado por: Daniel
             viewModel.updateFullHealthProfile(
                 weight = weight,
                 height = height,
@@ -100,18 +217,21 @@ class ProfileFragment : Fragment() {
             }
         }
 
-        // Observar resultado do salvamento para dar feedback ao usuário. Modificado por: Daniel
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.emergencyContacts.collect { contacts ->
+                    contactAdapter.submitList(contacts)
+                    binding.textNoEmergencyContacts.isVisible = contacts.isEmpty()
+                    binding.recyclerProfileEmergencyContacts.isVisible = contacts.isNotEmpty()
+                }
+            }
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.updateResult.collectLatest { resource ->
-                    when (resource) {
-                        is Resource.Success -> {
-                            Toast.makeText(requireContext(), resource.data, Toast.LENGTH_SHORT).show()
-                        }
-                        is Resource.Error -> {
-                            Toast.makeText(requireContext(), "Erro: ${resource.message}", Toast.LENGTH_LONG).show()
-                        }
-                        else -> {}
+                    if (resource is Resource.Success) {
+                        Toast.makeText(requireContext(), resource.data, Toast.LENGTH_SHORT).show()
                     }
                 }
             }

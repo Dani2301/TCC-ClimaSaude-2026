@@ -20,8 +20,8 @@ class SymptomAdapter(
         return SymptomViewHolder(binding, onDeleteClick)
     }
 
-    override fun onBindViewHolder(parent: SymptomViewHolder, position: Int) {
-        parent.bind(getItem(position))
+    override fun onBindViewHolder(holder: SymptomViewHolder, position: Int) {
+        holder.bind(getItem(position))
     }
 
     class SymptomViewHolder(
@@ -32,8 +32,8 @@ class SymptomAdapter(
             binding.textSymptomName.text = symptom.name
             binding.chipIntensity.text = "Intensidade: ${symptom.intensity}"
             
-            val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            binding.textTimestamp.text = sdf.format(symptom.timestamp)
+            val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+            binding.textTimestamp.text = "Registrado às ${sdf.format(symptom.timestamp)}"
             
             if (!symptom.notes.isNullOrBlank()) {
                 binding.textNotes.visibility = View.VISIBLE
@@ -42,11 +42,8 @@ class SymptomAdapter(
                 binding.textNotes.visibility = View.GONE
             }
 
-            // Permitir remover ao clicar longo ou adicionar um botão se preferir. 
-            // Para manter o visual limpo, usaremos clique longo no card. Modificado por: Daniel
-            binding.root.setOnLongClickListener {
+            binding.btnDeleteSymptom.setOnClickListener {
                 onDeleteClick(symptom)
-                true
             }
         }
     }

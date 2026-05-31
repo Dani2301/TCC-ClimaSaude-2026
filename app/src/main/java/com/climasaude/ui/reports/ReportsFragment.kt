@@ -16,8 +16,10 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.climasaude.databinding.FragmentReportsBinding
 import com.climasaude.presentation.viewmodels.ReportsViewModel
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.io.File
@@ -31,6 +33,7 @@ class ReportsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: ReportsViewModel by viewModels()
+    private lateinit var historyAdapter: HealthHistoryAdapter
 
     private val createDocumentLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -53,8 +56,18 @@ class ReportsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupRecyclerView()
         setupClickListeners()
         observeViewModel()
+    }
+
+    private fun setupRecyclerView() {
+        historyAdapter = HealthHistoryAdapter()
+        binding.recyclerHealthHistory.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = historyAdapter
+            isNestedScrollingEnabled = false
+        }
     }
 
     private fun setupClickListeners() {
@@ -70,6 +83,21 @@ class ReportsFragment : Fragment() {
             }
             shareReportFile(filePath)
         }
+
+        binding.buttonClearHistory.setOnClickListener {
+            showClearHistoryDialog()
+        }
+    }
+
+    private fun showClearHistoryDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Limpar Histórico")
+            .setMessage("Deseja realmente apagar todo o seu histórico de sintomas e medicamentos tomados? Esta ação não pode ser desfeita.")
+            .setPositiveButton("Limpar") { _, _ ->
+                viewModel.clearHistory()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun openDirectoryPicker() {
@@ -78,7 +106,6 @@ class ReportsFragment : Fragment() {
 
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
-            // MIME type para Excel
             type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             putExtra(Intent.EXTRA_TITLE, fileName)
         }
@@ -117,7 +144,9 @@ class ReportsFragment : Fragment() {
                     binding.buttonExportReport.isEnabled = !uiState.isExporting
                     binding.buttonShareReport.isEnabled = !uiState.isExporting && !uiState.exportedFilePath.isNullOrBlank()
                     binding.textExportStatus.text = uiState.statusMessage
-                    binding.textExportPath.text = uiState.exportedFilePath ?: ""
+                    
+                    historyAdapter.submitList(uiState.historyItems)
+                    binding.layoutEmptyHistory.isVisible = uiState.historyItems.isEmpty() && !uiState.isLoadingHistory
                 }
             }
         }
@@ -138,7 +167,6 @@ class ReportsFragment : Fragment() {
             )
 
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                // MIME type para Excel
                 type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 putExtra(Intent.EXTRA_STREAM, fileUri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)

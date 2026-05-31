@@ -9,8 +9,7 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:paddingBottom="100dp">
+        android:clipToPadding="false">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -18,7 +17,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Seção de Medicamentos. Modificado por: Daniel -->
+            <!-- Meus Medicamentos -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -29,7 +28,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Meus Medicamentos"
+                    android:text="@string/my_medications"
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
                     android:textColor="?attr/colorPrimary" />
 
@@ -38,7 +37,7 @@
                     style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Registrar"
+                    android:text="@string/register"
                     app:icon="@drawable/ic_add" />
             </LinearLayout>
 
@@ -62,18 +61,17 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Nenhum medicamento cadastrado"
+                    android:text="@string/empty_medications"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
             </LinearLayout>
 
-            <View
+            <com.google.android.material.divider.MaterialDivider
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                android:background="?attr/colorOutlineVariant" />
+                android:layout_marginBottom="16dp" />
 
-            <!-- Seção de Sintomas -->
+            <!-- Registro de Sintomas -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -84,7 +82,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Registro de Sintomas"
+                    android:text="@string/symptom_registration"
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
                     android:textColor="?attr/colorPrimary" />
 
@@ -93,7 +91,7 @@
                     style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Registrar"
+                    android:text="@string/register"
                     app:icon="@drawable/ic_add" />
             </LinearLayout>
 
@@ -117,7 +115,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Nenhum sintoma registrado recentemente"
+                    android:text="@string/empty_symptoms"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
             </LinearLayout>
 
