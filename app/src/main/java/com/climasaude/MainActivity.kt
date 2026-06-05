@@ -3,6 +3,8 @@ package com.climasaude
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
+import android.graphics.PorterDuff
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -14,7 +16,6 @@ import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.Lifecycle
@@ -64,7 +65,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Launcher específico para permissão de chamada
     private val callPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -84,7 +84,6 @@ class MainActivity : AppCompatActivity() {
         setupToolbar()
         setupBottomNavigation()
         setupDrawer()
-        setupEmergencyButton()
         observeViewModels()
         checkPermissions()
         handleIntent(intent)
@@ -127,7 +126,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupBottomNavigation() {
         binding.bottomNavigation.setupWithNavController(navController)
+        
+        // Desativa a tintura global para que cada ícone possa usar sua própria cor definida no drawable.
+        // Isso resolve o problema de todos os ícones aparecerem em cinza.
+        binding.bottomNavigation.itemIconTintList = null
+
+        // Reforça a cor vermelha especificamente para o botão de emergência, garantindo que ele se destaque.
+        binding.bottomNavigation.menu.findItem(R.id.navigation_emergency_call)?.let { item ->
+            val redColor = ContextCompat.getColor(this, R.color.error)
+            item.iconTintList = ColorStateList.valueOf(redColor)
+            item.iconTintMode = PorterDuff.Mode.SRC_IN
+        }
+
         binding.bottomNavigation.setOnItemSelectedListener { item ->
+            // Caso o botão de emergência seja clicado
+            if (item.itemId == R.id.navigation_emergency_call) {
+                checkCallPermissionAndMakeCall()
+                return@setOnItemSelectedListener false // Não marca o item como selecionado
+            }
+
             if (item.itemId == navController.currentDestination?.id) return@setOnItemSelectedListener false
 
             val navOptions = NavOptions.Builder()
@@ -157,12 +174,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupEmergencyButton() {
-        binding.fabEmergency.setOnClickListener {
-            checkCallPermissionAndMakeCall()
-        }
-    }
-
     private fun checkCallPermissionAndMakeCall() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
             makeEmergencyCall()
@@ -174,8 +185,10 @@ class MainActivity : AppCompatActivity() {
     private fun makeEmergencyCall() {
         val contacts = profileViewModel.emergencyContacts.value
         if (contacts.isNotEmpty()) {
-            val contact = contacts.first() // Disca para o primeiro contato cadastrado
-            val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:${contact.phone}"))
+            val contact = contacts.first()
+            // Remove caracteres não numéricos exceto o prefixo '+'
+            val phoneNumber = contact.phone.filter { it.isDigit() || it == '+' }
+            val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$phoneNumber"))
             startActivity(intent)
         } else {
             MaterialAlertDialogBuilder(this)

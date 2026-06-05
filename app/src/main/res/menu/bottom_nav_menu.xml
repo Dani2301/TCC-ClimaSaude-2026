@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Botão de Emergência movido para o início para acesso imediato. -->
+    <item
+        android:id="@+id/navigation_emergency_call"
+        android:icon="@drawable/ic_emergency"
+        android:title="@string/emergency" />
+
     <item
         android:id="@+id/navigation_dashboard"
         android:icon="@drawable/ic_action"
         android:title="@string/title_dashboard" />
-
-    <item
-        android:id="@+id/navigation_weather"
-        android:icon="@drawable/ic_weather"
-        android:title="@string/title_weather" />
 
     <item
         android:id="@+id/navigation_health"
@@ -26,4 +27,3 @@
         android:icon="@drawable/ic_person"
         android:title="@string/title_profile" />
 </menu>
-
