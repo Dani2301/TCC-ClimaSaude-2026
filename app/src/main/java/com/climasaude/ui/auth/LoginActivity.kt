@@ -23,6 +23,7 @@ import com.climasaude.databinding.ActivityLoginBinding
 import com.climasaude.presentation.viewmodels.AuthViewModel
 import com.climasaude.presentation.viewmodels.AuthEvent
 import com.climasaude.presentation.viewmodels.AuthState
+import com.climasaude.domain.models.UserProfile
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
@@ -113,7 +114,6 @@ class LoginActivity : AppCompatActivity() {
 
         if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS && appPreferences.isBiometricEnabled()) {
             binding.buttonBiometric.visibility = View.VISIBLE
-            // Opcional: Iniciar automaticamente se for preferência do usuário
         } else {
             binding.buttonBiometric.visibility = View.GONE
         }
@@ -132,9 +132,15 @@ class LoginActivity : AppCompatActivity() {
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    // No mundo real, aqui você usaria o segredo criptográfico ou um token salvo
-                    // Para este MVP, validamos o login se a biometria do sistema passou e o usuário já tinha habilitado.
-                    navigateToMain()
+                    val email = appPreferences.getSavedEmail()
+                    val password = appPreferences.getSavedPassword()
+                    
+                    if (email != null && password != null) {
+                        viewModel.loginWithEmail(email, password)
+                    } else {
+                        Toast.makeText(applicationContext, "Credenciais não encontradas. Faça login manualmente uma vez.", Toast.LENGTH_LONG).show()
+                        binding.buttonBiometric.visibility = View.GONE
+                    }
                 }
 
                 override fun onAuthenticationFailed() {
@@ -146,8 +152,7 @@ class LoginActivity : AppCompatActivity() {
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Login Biométrico")
             .setSubtitle("Use sua digital ou senha do dispositivo")
-            .setNegativeButtonText("Usar senha do app")
-            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
             .build()
 
         biometricPrompt.authenticate(promptInfo)
@@ -191,8 +196,7 @@ class LoginActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.authState.collect { state ->
                     if (state is AuthState.Authenticated) {
-                        // Ao logar com sucesso, se a biometria estiver disponível e não habilitada, podemos sugerir
-                        navigateToMain()
+                        handlePostLogin(state.user)
                     }
                 }
             }
@@ -208,6 +212,39 @@ class LoginActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun handlePostLogin(user: UserProfile) {
+        val biometricManager = BiometricManager.from(this)
+        val canAuthenticate = biometricManager.canAuthenticate(
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        )
+
+        // Se o login foi manual (campos preenchidos) e a biometria não está ativa, sugerimos ativar
+        val email = binding.editTextEmail.text.toString()
+        val password = binding.editTextPassword.text.toString()
+
+        if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS && !appPreferences.isBiometricEnabled() && email.isNotBlank()) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Ativar Biometria")
+                .setMessage("Deseja usar sua digital para facilitar os próximos acessos?")
+                .setPositiveButton("Sim") { _, _ ->
+                    appPreferences.setBiometricEnabled(true)
+                    appPreferences.saveCredentials(email, password)
+                    navigateToMain()
+                }
+                .setNegativeButton("Agora não") { _, _ ->
+                    navigateToMain()
+                }
+                .setCancelable(false)
+                .show()
+        } else {
+            // Se já está ativa, garantimos que as credenciais estão atualizadas
+            if (appPreferences.isBiometricEnabled() && email.isNotBlank()) {
+                appPreferences.saveCredentials(email, password)
+            }
+            navigateToMain()
         }
     }
 
@@ -228,6 +265,7 @@ class LoginActivity : AppCompatActivity() {
         binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         binding.buttonLogin.isEnabled = !isLoading
         binding.buttonGoogleSignIn.isEnabled = !isLoading
+        binding.buttonBiometric.isEnabled = !isLoading
     }
 
     private fun navigateToMain() {

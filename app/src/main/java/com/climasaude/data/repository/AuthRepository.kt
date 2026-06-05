@@ -164,9 +164,14 @@ class AuthRepository @Inject constructor(
                 googleSignInClient.signOut().await()
             }
 
-            appPreferences.setUserId("")
+            // Ao deslogar, mantemos o UserId se a biometria estiver ativa
+            // para permitir o login biométrico futuro. Caso contrário, limpamos.
+            if (!appPreferences.isBiometricEnabled()) {
+                appPreferences.setUserId("")
+            }
+            
             appPreferences.setUserLoggedIn(false)
-            appPreferences.clearBiometricEnabled()
+            // Removido clearBiometricEnabled para manter a preferência do usuário salva.
 
             Resource.Success("Sessão encerrada")
         } catch (e: Exception) {

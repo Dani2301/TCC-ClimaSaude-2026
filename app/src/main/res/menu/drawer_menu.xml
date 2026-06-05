@@ -30,8 +30,13 @@
 
     <divider />
 
-    <item android:title="Suporte">
+    <item android:title="Suporte e Opções">
         <menu>
+            <item
+                android:id="@+id/navigation_settings"
+                android:icon="@drawable/ic_sync"
+                android:title="@string/title_settings" />
+
             <item
                 android:id="@+id/navigation_emergency_contacts"
                 android:icon="@drawable/ic_emergency"

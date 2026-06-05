@@ -6,7 +6,6 @@ import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.security.GeneralSecurityException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -33,8 +32,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             )
         } catch (e: Exception) {
             Log.e("AppPreferences", "Erro ao inicializar EncryptedSharedPreferences, tentando recuperar...", e)
-            
-            // Se falhar (comum em celulares físicos após reinstalação), deletamos o arquivo corrompido e tentamos de novo
             try {
                 context.deleteSharedPreferences(fileName)
                 val masterKey = MasterKey.Builder(context)
@@ -50,7 +47,6 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
                 )
             } catch (e2: Exception) {
                 Log.e("AppPreferences", "Falha crítica na criptografia. Usando SharedPreferences comum.", e2)
-                // Fallback final: SharedPreferences normal para o app não crashar
                 context.getSharedPreferences(fileName, Context.MODE_PRIVATE)
             }
         }
@@ -60,6 +56,8 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         private const val KEY_USER_ID = "user_id"
         private const val KEY_USER_LOGGED_IN = "user_logged_in"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
+        private const val KEY_ENCRYPTED_EMAIL = "enc_email"
+        private const val KEY_ENCRYPTED_PASS = "enc_pass"
         private const val KEY_THEME = "theme"
         private const val KEY_LANGUAGE = "language"
         private const val KEY_FIRST_LAUNCH = "first_launch"
@@ -83,29 +81,36 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         sharedPreferences.edit().putString(KEY_USER_ID, userId).apply()
     }
 
-    fun getUserId(): String {
-        return sharedPreferences.getString(KEY_USER_ID, "") ?: ""
-    }
+    fun getUserId(): String = sharedPreferences.getString(KEY_USER_ID, "") ?: ""
 
     fun setUserLoggedIn(isLoggedIn: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_USER_LOGGED_IN, isLoggedIn).apply()
     }
 
-    fun isUserLoggedIn(): Boolean {
-        return sharedPreferences.getBoolean(KEY_USER_LOGGED_IN, false)
-    }
+    fun isUserLoggedIn(): Boolean = sharedPreferences.getBoolean(KEY_USER_LOGGED_IN, false)
 
     // Biometric Authentication
     fun setBiometricEnabled(enabled: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply()
     }
 
-    fun isBiometricEnabled(): Boolean {
-        return sharedPreferences.getBoolean(KEY_BIOMETRIC_ENABLED, false)
+    fun isBiometricEnabled(): Boolean = sharedPreferences.getBoolean(KEY_BIOMETRIC_ENABLED, false)
+
+    fun saveCredentials(email: String, pass: String) {
+        sharedPreferences.edit()
+            .putString(KEY_ENCRYPTED_EMAIL, email)
+            .putString(KEY_ENCRYPTED_PASS, pass)
+            .apply()
     }
 
-    fun clearBiometricEnabled() {
-        sharedPreferences.edit().remove(KEY_BIOMETRIC_ENABLED).apply()
+    fun getSavedEmail(): String? = sharedPreferences.getString(KEY_ENCRYPTED_EMAIL, null)
+    fun getSavedPassword(): String? = sharedPreferences.getString(KEY_ENCRYPTED_PASS, null)
+
+    fun clearCredentials() {
+        sharedPreferences.edit()
+            .remove(KEY_ENCRYPTED_EMAIL)
+            .remove(KEY_ENCRYPTED_PASS)
+            .apply()
     }
 
     // Theme and Language
@@ -113,118 +118,90 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
         sharedPreferences.edit().putString(KEY_THEME, theme).apply()
     }
 
-    fun getTheme(): String {
-        return sharedPreferences.getString(KEY_THEME, "auto") ?: "auto"
-    }
+    fun getTheme(): String = sharedPreferences.getString(KEY_THEME, "auto") ?: "auto"
 
     fun setLanguage(language: String) {
         sharedPreferences.edit().putString(KEY_LANGUAGE, language).apply()
     }
 
-    fun getLanguage(): String {
-        return sharedPreferences.getString(KEY_LANGUAGE, "pt-BR") ?: "pt-BR"
-    }
+    fun getLanguage(): String = sharedPreferences.getString(KEY_LANGUAGE, "pt-BR") ?: "pt-BR"
 
     // App State
     fun setFirstLaunch(isFirstLaunch: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_FIRST_LAUNCH, isFirstLaunch).apply()
     }
 
-    fun isFirstLaunch(): Boolean {
-        return sharedPreferences.getBoolean(KEY_FIRST_LAUNCH, true)
-    }
+    fun isFirstLaunch(): Boolean = sharedPreferences.getBoolean(KEY_FIRST_LAUNCH, true)
 
     fun setOnboardingCompleted(completed: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_ONBOARDING_COMPLETED, completed).apply()
     }
 
-    fun isOnboardingCompleted(): Boolean {
-        return sharedPreferences.getBoolean(KEY_ONBOARDING_COMPLETED, false)
-    }
+    fun isOnboardingCompleted(): Boolean = sharedPreferences.getBoolean(KEY_ONBOARDING_COMPLETED, false)
 
     // Permissions
     fun setLocationPermissionGranted(granted: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_LOCATION_PERMISSION_GRANTED, granted).apply()
     }
 
-    fun isLocationPermissionGranted(): Boolean {
-        return sharedPreferences.getBoolean(KEY_LOCATION_PERMISSION_GRANTED, false)
-    }
+    fun isLocationPermissionGranted(): Boolean = sharedPreferences.getBoolean(KEY_LOCATION_PERMISSION_GRANTED, false)
 
     fun setNotificationPermissionGranted(granted: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_NOTIFICATION_PERMISSION_GRANTED, granted).apply()
     }
 
-    fun isNotificationPermissionGranted(): Boolean {
-        return sharedPreferences.getBoolean(KEY_NOTIFICATION_PERMISSION_GRANTED, false)
-    }
+    fun isNotificationPermissionGranted(): Boolean = sharedPreferences.getBoolean(KEY_NOTIFICATION_PERMISSION_GRANTED, false)
 
     // Sync Settings
     fun setLastSyncTime(time: Long) {
         sharedPreferences.edit().putLong(KEY_LAST_SYNC_TIME, time).apply()
     }
 
-    fun getLastSyncTime(): Long {
-        return sharedPreferences.getLong(KEY_LAST_SYNC_TIME, 0)
-    }
+    fun getLastSyncTime(): Long = sharedPreferences.getLong(KEY_LAST_SYNC_TIME, 0)
 
     fun setOfflineMode(enabled: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_OFFLINE_MODE, enabled).apply()
     }
 
-    fun isOfflineMode(): Boolean {
-        return sharedPreferences.getBoolean(KEY_OFFLINE_MODE, false)
-    }
+    fun isOfflineMode(): Boolean = sharedPreferences.getBoolean(KEY_OFFLINE_MODE, false)
 
     fun setAutoSync(enabled: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_AUTO_SYNC, enabled).apply()
     }
 
-    fun isAutoSyncEnabled(): Boolean {
-        return sharedPreferences.getBoolean(KEY_AUTO_SYNC, true)
-    }
+    fun isAutoSyncEnabled(): Boolean = sharedPreferences.getBoolean(KEY_AUTO_SYNC, true)
 
     fun setSyncFrequency(frequency: Int) {
         sharedPreferences.edit().putInt(KEY_SYNC_FREQUENCY, frequency).apply()
     }
 
-    fun getSyncFrequency(): Int {
-        return sharedPreferences.getInt(KEY_SYNC_FREQUENCY, 30)
-    }
+    fun getSyncFrequency(): Int = sharedPreferences.getInt(KEY_SYNC_FREQUENCY, 30)
 
     // Weather Settings
     fun setWeatherUnits(units: String) {
         sharedPreferences.edit().putString(KEY_WEATHER_UNITS, units).apply()
     }
 
-    fun getWeatherUnits(): String {
-        return sharedPreferences.getString(KEY_WEATHER_UNITS, "metric") ?: "metric"
-    }
+    fun getWeatherUnits(): String = sharedPreferences.getString(KEY_WEATHER_UNITS, "metric") ?: "metric"
 
     // Notification Settings
     fun setQuietHoursEnabled(enabled: Boolean) {
         sharedPreferences.edit().putBoolean(KEY_QUIET_HOURS_ENABLED, enabled).apply()
     }
 
-    fun isQuietHoursEnabled(): Boolean {
-        return sharedPreferences.getBoolean(KEY_QUIET_HOURS_ENABLED, false)
-    }
+    fun isQuietHoursEnabled(): Boolean = sharedPreferences.getBoolean(KEY_QUIET_HOURS_ENABLED, false)
 
     fun setQuietHoursStart(time: String) {
         sharedPreferences.edit().putString(KEY_QUIET_HOURS_START, time).apply()
     }
 
-    fun getQuietHoursStart(): String {
-        return sharedPreferences.getString(KEY_QUIET_HOURS_START, "22:00") ?: "22:00"
-    }
+    fun getQuietHoursStart(): String = sharedPreferences.getString(KEY_QUIET_HOURS_START, "22:00") ?: "22:00"
 
     fun setQuietHoursEnd(time: String) {
         sharedPreferences.edit().putString(KEY_QUIET_HOURS_END, time).apply()
     }
 
-    fun getQuietHoursEnd(): String {
-        return sharedPreferences.getString(KEY_QUIET_HOURS_END, "07:00") ?: "07:00"
-    }
+    fun getQuietHoursEnd(): String = sharedPreferences.getString(KEY_QUIET_HOURS_END, "07:00") ?: "07:00"
 
     fun setLastLocation(latitude: Double, longitude: Double) {
         sharedPreferences.edit()
@@ -233,13 +210,8 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             .apply()
     }
 
-    fun getLastLatitude(): Double {
-        return sharedPreferences.getFloat(KEY_LAST_LAT, 0f).toDouble()
-    }
-
-    fun getLastLongitude(): Double {
-        return sharedPreferences.getFloat(KEY_LAST_LON, 0f).toDouble()
-    }
+    fun getLastLatitude(): Double = sharedPreferences.getFloat(KEY_LAST_LAT, 0f).toDouble()
+    fun getLastLongitude(): Double = sharedPreferences.getFloat(KEY_LAST_LON, 0f).toDouble()
 
     fun clearAll() {
         sharedPreferences.edit().clear().apply()
@@ -250,6 +222,8 @@ class AppPreferences @Inject constructor(@ApplicationContext private val context
             .remove(KEY_USER_ID)
             .remove(KEY_USER_LOGGED_IN)
             .remove(KEY_BIOMETRIC_ENABLED)
+            .remove(KEY_ENCRYPTED_EMAIL)
+            .remove(KEY_ENCRYPTED_PASS)
             .remove(KEY_LAST_SYNC_TIME)
             .apply()
     }

@@ -31,13 +31,9 @@ class AuthViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
-
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
 
-    // Usamos um buffer para garantir que eventos não sejam perdidos durante transições de ciclo de vida.
     private val _eventChannel = Channel<AuthEvent>(Channel.BUFFERED)
     val authEvents = _eventChannel.receiveAsFlow()
 
@@ -51,9 +47,8 @@ class AuthViewModel @Inject constructor(
                         if (user != null) {
                             _userProfile.value = user
                             _authState.value = AuthState.Authenticated(user)
-                            _eventChannel.send(AuthEvent.NavigateToMain)
                         } else {
-                            _eventChannel.send(AuthEvent.ShowError("Falha ao autenticar"))
+                            _eventChannel.send(AuthEvent.ShowError("Falha ao autenticar: Usuário não retornado"))
                         }
                     }
                     is Resource.Error -> {
@@ -86,7 +81,6 @@ class AuthViewModel @Inject constructor(
                             _userProfile.value = user
                             _authState.value = AuthState.Authenticated(user)
                             _eventChannel.send(AuthEvent.ShowSuccess("Conta criada com sucesso! Redirecionando..."))
-                            _eventChannel.send(AuthEvent.NavigateToMain)
                         }
                     }
                     is Resource.Error -> {
@@ -114,7 +108,6 @@ class AuthViewModel @Inject constructor(
                         if (user != null) {
                             _userProfile.value = user
                             _authState.value = AuthState.Authenticated(user)
-                            _eventChannel.send(AuthEvent.NavigateToMain)
                         }
                     }
                     is Resource.Error -> {
@@ -162,10 +155,6 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun clearError() {
-        _errorMessage.value = null
-    }
-
     fun setInitialState() {
         _authState.value = AuthState.Initial
     }
@@ -176,5 +165,4 @@ sealed class AuthState {
     object Unauthenticated : AuthState()
     data class Authenticated(val user: UserProfile) : AuthState()
     data class Error(val message: String) : AuthState()
-    object PasswordResetSent : AuthState()
 }
