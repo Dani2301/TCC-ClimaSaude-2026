@@ -3,15 +3,18 @@ package com.climasaude
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.lifecycle.Lifecycle
@@ -61,6 +64,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Launcher específico para permissão de chamada
+    private val callPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            makeEmergencyCall()
+        } else {
+            Toast.makeText(this, "Permissão de chamada necessária para emergência.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -70,6 +84,7 @@ class MainActivity : AppCompatActivity() {
         setupToolbar()
         setupBottomNavigation()
         setupDrawer()
+        setupEmergencyButton()
         observeViewModels()
         checkPermissions()
         handleIntent(intent)
@@ -142,6 +157,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupEmergencyButton() {
+        binding.fabEmergency.setOnClickListener {
+            checkCallPermissionAndMakeCall()
+        }
+    }
+
+    private fun checkCallPermissionAndMakeCall() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+            makeEmergencyCall()
+        } else {
+            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+        }
+    }
+
+    private fun makeEmergencyCall() {
+        val contacts = profileViewModel.emergencyContacts.value
+        if (contacts.isNotEmpty()) {
+            val contact = contacts.first() // Disca para o primeiro contato cadastrado
+            val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:${contact.phone}"))
+            startActivity(intent)
+        } else {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Nenhum contato")
+                .setMessage("Você não possui contatos de emergência cadastrados. Deseja cadastrar agora?")
+                .setPositiveButton("Sim") { _, _ ->
+                    navController.navigate(R.id.navigation_emergency_contacts)
+                }
+                .setNegativeButton("Não", null)
+                .show()
+        }
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
         return true
@@ -180,7 +227,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Observa o perfil do usuário para atualizar o Header do Drawer.
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 profileViewModel.userProfile.collect { profile ->

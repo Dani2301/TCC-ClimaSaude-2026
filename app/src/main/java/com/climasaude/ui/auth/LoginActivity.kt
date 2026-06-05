@@ -9,12 +9,16 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.climasaude.BuildConfig
 import com.climasaude.MainActivity
+import com.climasaude.data.preferences.AppPreferences
 import com.climasaude.databinding.ActivityLoginBinding
 import com.climasaude.presentation.viewmodels.AuthViewModel
 import com.climasaude.presentation.viewmodels.AuthEvent
@@ -25,12 +29,16 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private val viewModel: AuthViewModel by viewModels()
+
+    @Inject
+    lateinit var appPreferences: AppPreferences
 
     private val googleSignInLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -60,17 +68,7 @@ class LoginActivity : AppCompatActivity() {
         setupUI()
         setupObservers()
         setupBackPressed()
-        
-        // Verificação de sessão existente
-        checkExistingSession()
-    }
-
-    private fun checkExistingSession() {
-        val account = GoogleSignIn.getLastSignedInAccount(this)
-        if (account != null && !viewModel.isLoading.value) {
-            // Se já existe conta Google, tentamos validar o estado no ViewModel
-            // O ViewModel deve ser a fonte da verdade
-        }
+        checkBiometricAvailability()
     }
 
     private fun setupUI() {
@@ -84,6 +82,10 @@ class LoginActivity : AppCompatActivity() {
 
         binding.buttonGoogleSignIn.setOnClickListener {
             startGoogleSignIn()
+        }
+
+        binding.buttonBiometric.setOnClickListener {
+            showBiometricPrompt()
         }
 
         binding.textviewSignUp.setOnClickListener {
@@ -103,6 +105,54 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkBiometricAvailability() {
+        val biometricManager = BiometricManager.from(this)
+        val canAuthenticate = biometricManager.canAuthenticate(
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        )
+
+        if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS && appPreferences.isBiometricEnabled()) {
+            binding.buttonBiometric.visibility = View.VISIBLE
+            // Opcional: Iniciar automaticamente se for preferência do usuário
+        } else {
+            binding.buttonBiometric.visibility = View.GONE
+        }
+    }
+
+    private fun showBiometricPrompt() {
+        val executor = ContextCompat.getMainExecutor(this)
+        val biometricPrompt = BiometricPrompt(this, executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    if (errorCode != BiometricPrompt.ERROR_USER_CANCELED) {
+                        Toast.makeText(applicationContext, "Erro na autenticação: $errString", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    // No mundo real, aqui você usaria o segredo criptográfico ou um token salvo
+                    // Para este MVP, validamos o login se a biometria do sistema passou e o usuário já tinha habilitado.
+                    navigateToMain()
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    Toast.makeText(applicationContext, "Biometria não reconhecida", Toast.LENGTH_SHORT).show()
+                }
+            })
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Login Biométrico")
+            .setSubtitle("Use sua digital ou senha do dispositivo")
+            .setNegativeButtonText("Usar senha do app")
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+            .build()
+
+        biometricPrompt.authenticate(promptInfo)
+    }
+
     private fun startGoogleSignIn() {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(BuildConfig.GOOGLE_WEB_CLIENT_ID)
@@ -110,8 +160,6 @@ class LoginActivity : AppCompatActivity() {
             .build()
 
         val googleSignInClient = GoogleSignIn.getClient(this, gso)
-        
-        // Garantimos o signOut para evitar que o Google retorne uma sessão cacheada problemática
         googleSignInClient.signOut().addOnCompleteListener {
             googleSignInLauncher.launch(googleSignInClient.signInIntent)
         }
@@ -131,7 +179,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setupObservers() {
-        // Observer para Loading
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.isLoading.collect { isLoading ->
@@ -140,31 +187,24 @@ class LoginActivity : AppCompatActivity() {
             }
         }
 
-        // Observer para o Estado de Autenticação (Mais confiável para navegação)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.authState.collect { state ->
                     if (state is AuthState.Authenticated) {
+                        // Ao logar com sucesso, se a biometria estiver disponível e não habilitada, podemos sugerir
                         navigateToMain()
                     }
                 }
             }
         }
 
-        // Observer para Eventos Únicos (Toasts e Erros)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.authEvents.collect { event ->
                     when (event) {
-                        is AuthEvent.NavigateToMain -> {
-                            navigateToMain()
-                        }
-                        is AuthEvent.ShowError -> {
-                            Toast.makeText(this@LoginActivity, event.message, Toast.LENGTH_LONG).show()
-                        }
-                        is AuthEvent.ShowSuccess -> {
-                            Toast.makeText(this@LoginActivity, event.message, Toast.LENGTH_SHORT).show()
-                        }
+                        is AuthEvent.NavigateToMain -> navigateToMain()
+                        is AuthEvent.ShowError -> Toast.makeText(this@LoginActivity, event.message, Toast.LENGTH_LONG).show()
+                        is AuthEvent.ShowSuccess -> Toast.makeText(this@LoginActivity, event.message, Toast.LENGTH_SHORT).show()
                     }
                 }
             }

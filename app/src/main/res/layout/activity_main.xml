@@ -54,8 +54,22 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:menu="@menu/bottom_nav_menu" />
 
+
+
         </androidx.constraintlayout.widget.ConstraintLayout>
 
+        <!-- Botão de Emergência Flutuante. Modificado por: Daniel -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_emergency"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:contentDescription="Emergência"
+            app:backgroundTint="@android:color/holo_red_dark"
+            app:srcCompat="@drawable/ic_emergency"
+            app:tint="@android:color/white"
+            tools:layout_editor_absoluteX="312dp"
+            tools:layout_editor_absoluteY="516dp" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <!-- Side Menu (Right Drawer) -->
